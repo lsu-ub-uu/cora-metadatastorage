@@ -1,0 +1,158 @@
+<!--
+  ~ Copyright 2015, 2018 Uppsala University Library
+  ~
+  ~ This file is part of Cora.
+  ~
+  ~     Cora is free software: you can redistribute it and/or modify
+  ~     it under the terms of the GNU General Public License as published by
+  ~     the Free Software Foundation, either version 3 of the License, or
+  ~     (at your option) any later version.
+  ~
+  ~     Cora is distributed in the hope that it will be useful,
+  ~     but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~     GNU General Public License for more details.
+  ~
+  ~     You should have received a copy of the GNU General Public License
+  ~     along with Cora.  If not, see <http://www.gnu.org/licenses />.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<parent>
+		<groupId>se.uu.ub.cora</groupId>
+		<artifactId>cora-parent</artifactId>
+		<version>2.0.0</version>
+	</parent>
+
+	<artifactId>metadatastorage</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>userstorage</name>
+	
+	<properties>
+		<gatekeeper.version>4.0-SNAPSHOT</gatekeeper.version>
+		<storage.version>7.0-SNAPSHOT</storage.version>
+		<spider.version>7.3-SNAPSHOT</spider.version>
+		<logger.version>2.5.0</logger.version>
+		<coradata.version>7.2-SNAPSHOT</coradata.version>
+		<basicdata.version>5.0-SNAPSHOT</basicdata.version>
+		<beefeater.version>3.7.0</beefeater.version>
+		<bookkeeper.version>8.0-SNAPSHOT</bookkeeper.version>
+		<search.version>5.0-SNAPSHOT</search.version>
+		<json.version>3.3.0</json.version>
+		<initialize.version>1.0-SNAPSHOT</initialize.version>
+		<testutils.version>1.6-SNAPSHOT</testutils.version>
+		<storagespies.version>1.0-SNAPSHOT</storagespies.version>
+		<logger-spies.version>1.0-SNAPSHOT</logger-spies.version>
+		<servlet-api.version>5.0.0</servlet-api.version>
+	</properties>
+
+	<scm>
+		<connection>scm:git:https://github.com/lsu-ub-uu/cora-metadatastorage.git</connection>
+		<developerConnection>scm:git:https://github.com/lsu-ub-uu/cora-metadatastorage.git</developerConnection>
+		<url>https://github.com/lsu-ub-uu/cora-metadatastorage.git</url>
+	  	<tag>HEAD</tag>
+  	</scm>
+  	
+  	<dependencies>
+  		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>gatekeeper</artifactId>
+			<version>${gatekeeper.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>storage</artifactId>
+			<version>${storage.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>spider</artifactId>
+			<version>${spider.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>beefeater</artifactId>
+			<version>${beefeater.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>bookkeeper</artifactId>
+			<version>${bookkeeper.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>search</artifactId>
+			<version>${search.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>logger</artifactId>
+			<version>${logger.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>coradata</artifactId>
+			<version>${coradata.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>basicdata</artifactId>
+			<version>${basicdata.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>json</artifactId>
+			<version>${json.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>initialize</artifactId>
+			<version>${initialize.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>testutils</artifactId>
+			<version>${testutils.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>storage-spies</artifactId>
+			<version>${storagespies.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>${testng.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>logger-spies</artifactId>
+			<version>${logger-spies.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
+			<version>${servlet-api.version}</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+</project>
