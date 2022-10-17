@@ -1,4 +1,4 @@
-package se.uu.ub.cora.userstorage.spies;
+package se.uu.ub.cora.metadatastorage.spies;
 
 import java.util.Collections;
 import java.util.List;

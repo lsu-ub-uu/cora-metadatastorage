@@ -29,7 +29,7 @@
 	<version>1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>userstorage</name>
+	<name>metadatastorage</name>
 	
 	<properties>
 		<gatekeeper.version>4.0-SNAPSHOT</gatekeeper.version>
@@ -45,7 +45,7 @@
 		<initialize.version>1.0-SNAPSHOT</initialize.version>
 		<testutils.version>1.6-SNAPSHOT</testutils.version>
 		<storagespies.version>1.0-SNAPSHOT</storagespies.version>
-		<logger-spies.version>1.0-SNAPSHOT</logger-spies.version>
+		<loggerspies.version>1.0-SNAPSHOT</loggerspies.version>
 		<servlet-api.version>5.0.0</servlet-api.version>
 	</properties>
 
@@ -144,7 +144,7 @@
 		<dependency>
 			<groupId>se.uu.ub.cora</groupId>
 			<artifactId>logger-spies</artifactId>
-			<version>${logger-spies.version}</version>
+			<version>${loggerspies.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

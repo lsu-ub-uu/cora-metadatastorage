@@ -1,6 +1,7 @@
-package se.uu.ub.cora.userstorage.spies;
+package se.uu.ub.cora.metadatastorage;
 
 import se.uu.ub.cora.data.DataGroup;
+import se.uu.ub.cora.metadatastorage.spies.RecordTypeHandlerSpy;
 import se.uu.ub.cora.spider.recordtype.RecordTypeHandler;
 import se.uu.ub.cora.spider.recordtype.internal.RecordTypeHandlerFactory;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
