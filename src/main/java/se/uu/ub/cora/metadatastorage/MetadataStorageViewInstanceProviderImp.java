@@ -20,35 +20,25 @@ package se.uu.ub.cora.metadatastorage;
 
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewInstanceProvider;
+import se.uu.ub.cora.spider.recordtype.internal.RecordTypeHandlerFactory;
+import se.uu.ub.cora.spider.recordtype.internal.RecordTypeHandlerFactoryImp;
+import se.uu.ub.cora.storage.RecordStorage;
+import se.uu.ub.cora.storage.RecordStorageProvider;
 
 public class MetadataStorageViewInstanceProviderImp implements MetadataStorageViewInstanceProvider {
 
 	@Override
 	public int getOrderToSelectImplementionsBy() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public MetadataStorageView getStorageView() {
-		// TODO Auto-generated method stub
-		return null;
+		RecordStorage recordStorage = RecordStorageProvider.getRecordStorage();
+		RecordStorage recordStorage2 = RecordStorageProvider.getRecordStorage();
+		RecordTypeHandlerFactory recordTypeHandlerFactory = new RecordTypeHandlerFactoryImp(
+				recordStorage2);
+		return MetadataStorageViewImp.usingRecordStorageAndRecordTypeHandlerFactory(recordStorage,
+				recordTypeHandlerFactory);
 	}
-
-	// @Override
-	// public UserStorageView getStorageView() {
-	// DataGroupToUser dataGroupToUser = new DataGroupToUserImp();
-	// RecordStorage recordStorage = RecordStorageProvider.getRecordStorage();
-	// RecordStorage recordStorage2 = RecordStorageProvider.getRecordStorage();
-	// RecordTypeHandlerFactoryImp recordTypeHandlerFactory = new RecordTypeHandlerFactoryImp(
-	// recordStorage2);
-	// return MetadataStorageViewImp.usingRecordStorageAndRecordTypeHandlerFactory(recordStorage,
-	// recordTypeHandlerFactory, dataGroupToUser);
-	// }
-	//
-	// @Override
-	// public int getOrderToSelectImplementionsBy() {
-	// return 0;
-	// }
-
 }

@@ -19,6 +19,7 @@
 package se.uu.ub.cora.metadatastorage;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -26,6 +27,7 @@ import org.testng.annotations.Test;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewInstanceProvider;
 import se.uu.ub.cora.logger.LoggerProvider;
 import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
+import se.uu.ub.cora.spider.recordtype.internal.RecordTypeHandlerFactoryImp;
 import se.uu.ub.cora.storage.RecordStorageProvider;
 import se.uu.ub.cora.storage.spies.RecordStorageInstanceProviderSpy;
 
@@ -43,37 +45,27 @@ public class MetadataStorageViewInstanceProviderTest {
 		instanceProvider = new MetadataStorageViewInstanceProviderImp();
 	}
 
-	// @Test
-	// public void testGetStorageView() throws Exception {
-	// MetadataStorageViewImp appTokenStorageView = (MetadataStorageViewImp) instanceProvider
-	// .getStorageView();
-	//
-	// assertTrue(appTokenStorageView instanceof MetadataStorageViewImp);
-	// recordStorageInstanceProvider.MCR.assertReturn("getRecordStorage", 0,
-	// appTokenStorageView.onlyForTestGetRecordStorage());
-	// }
-	//
-	// @Test
-	// public void testCreatedRecordTypeHandlerFactory() throws Exception {
-	// MetadataStorageViewImp appTokenStorageView = (MetadataStorageViewImp) instanceProvider
-	// .getStorageView();
-	//
-	// RecordTypeHandlerFactoryImp recordTypeHandlerFactory = (RecordTypeHandlerFactoryImp)
-	// appTokenStorageView
-	// .onlyForTestGetRecordTypeHandlerFactory();
-	// assertTrue(recordTypeHandlerFactory instanceof RecordTypeHandlerFactoryImp);
-	// recordStorageInstanceProvider.MCR.assertReturn("getRecordStorage", 1,
-	// recordTypeHandlerFactory.onlyForTestGetRecordStorage());
-	//
-	// }
-	//
-	// @Test
-	// public void testCreatedDataGroupToUser() throws Exception {
-	// MetadataStorageViewImp appTokenStorageView = (MetadataStorageViewImp) instanceProvider
-	// .getStorageView();
-	// DataGroupToUser dataGroupToUser = appTokenStorageView.onlyForTestGetDataGroupToUser();
-	// assertTrue(dataGroupToUser instanceof DataGroupToUserImp);
-	// }
+	@Test
+	public void testGetStorageView() throws Exception {
+		MetadataStorageViewImp metadataStorageView = (MetadataStorageViewImp) instanceProvider
+				.getStorageView();
+
+		assertTrue(metadataStorageView instanceof MetadataStorageViewImp);
+		recordStorageInstanceProvider.MCR.assertReturn("getRecordStorage", 0,
+				metadataStorageView.onlyForTestGetRecordStorage());
+	}
+
+	@Test
+	public void testCreatedRecordTypeHandlerFactory() throws Exception {
+		MetadataStorageViewImp appTokenStorageView = (MetadataStorageViewImp) instanceProvider
+				.getStorageView();
+
+		RecordTypeHandlerFactoryImp recordTypeHandlerFactory = (RecordTypeHandlerFactoryImp) appTokenStorageView
+				.onlyForTestGetRecordTypeHandlerFactory();
+		assertTrue(recordTypeHandlerFactory instanceof RecordTypeHandlerFactoryImp);
+		recordStorageInstanceProvider.MCR.assertReturn("getRecordStorage", 1,
+				recordTypeHandlerFactory.onlyForTestGetRecordStorage());
+	}
 
 	@Test
 	public void testGetOrderToSelectImplemtationsBy() throws Exception {

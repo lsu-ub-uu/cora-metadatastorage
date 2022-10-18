@@ -18,24 +18,35 @@
  */
 package se.uu.ub.cora.metadatastorage;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
+import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
+import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataProvider;
 import se.uu.ub.cora.data.spies.DataFactorySpy;
+import se.uu.ub.cora.data.spies.DataGroupSpy;
+import se.uu.ub.cora.metadatastorage.spies.RecordTypeHandlerFactorySpy;
+import se.uu.ub.cora.metadatastorage.spies.RecordTypeHandlerSpy;
+import se.uu.ub.cora.storage.StorageReadResult;
 import se.uu.ub.cora.storage.spies.RecordStorageSpy;
 
 public class MetadataStorageViewTest {
-	private static final String ID_FROM_LOGIN = "someIdFromLogin";
-	private static final String APP_TOKEN_ID = "someAppTokenId";
-	private static final String USER_ID = "someUserId";
+	private MetadataStorageView metadataStorage;
 	private RecordStorageSpy recordStorage;
-	private MetadataStorageViewImp appTokenStorage;
 	private RecordTypeHandlerFactorySpy recordTypeHandlerFactory;
-	// private DataGroupToUserSpy dataGroupToUser;
 	private DataFactorySpy dataFactorySpy;
+	private StorageReadResult resultWithValues;
 
 	@BeforeMethod
 	public void beforeMethod() {
@@ -43,219 +54,107 @@ public class MetadataStorageViewTest {
 		DataProvider.onlyForTestSetDataFactory(dataFactorySpy);
 
 		recordStorage = new RecordStorageSpy();
+		createReadResultWithValues();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList",
+				(Supplier<StorageReadResult>) () -> resultWithValues);
+
 		recordTypeHandlerFactory = new RecordTypeHandlerFactorySpy();
-		// dataGroupToUser = new DataGroupToUserSpy();
-		// appTokenStorage = MetadataStorageViewImp.usingRecordStorageAndRecordTypeHandlerFactory(
-		// recordStorage, recordTypeHandlerFactory, dataGroupToUser);
+		metadataStorage = MetadataStorageViewImp.usingRecordStorageAndRecordTypeHandlerFactory(
+				recordStorage, recordTypeHandlerFactory);
+	}
+
+	private void createReadResultWithValues() {
+		resultWithValues = new StorageReadResult();
+		resultWithValues.listOfDataGroups = List.of(new DataGroupSpy(), new DataGroupSpy(),
+				new DataGroupSpy());
 	}
 
 	@Test
-	public void testInit() throws Exception {
-		assertTrue(appTokenStorage instanceof MetadataStorageViewImp);
+	public void testGetMetadataElements() throws Exception {
+		callAndAssertListFromStorageByRecordType("metadata", metadataStorage::getMetadataElements);
 	}
 
-	// @Test
-	// public void testGetUserById_usingDependencies() throws Exception {
-	// appTokenStorage.getUserById(USER_ID);
-	//
-	// recordStorage.MCR.assertParameterAsEqual("read", 0, "types", List.of("recordType"));
-	// recordStorage.MCR.assertParameterAsEqual("read", 0, "id", "user");
-	//
-	// var userData = recordStorage.MCR.getReturnValue("read", 0);
-	//
-	// recordTypeHandlerFactory.MCR.assertParameters("factorUsingDataGroup", 0, userData);
-	//
-	// RecordTypeHandlerSpy userRecordTypeHandler = (RecordTypeHandlerSpy)
-	// recordTypeHandlerFactory.MCR
-	// .getReturnValue("factorUsingDataGroup", 0);
-	// var listOfUserTypes = userRecordTypeHandler.MCR
-	// .getReturnValue("getListOfImplementingRecordTypeIds", 0);
-	// recordStorage.MCR.assertParameters("read", 1, listOfUserTypes, USER_ID);
-	// }
-	//
-	// @Test
-	// public void testGetUserById_userContainsInfo() throws Exception {
-	// DataGroupSpy userDataGroup = new DataGroupSpy();
-	// userDataGroup.MRV.setReturnValues("getAllGroupsWithNameInData", List.of(),
-	// "userAppTokenGroup");
-	//
-	// recordStorage.MRV.setReturnValues("read", List.of(userDataGroup), Collections.emptyList(),
-	// USER_ID);
-	//
-	// User user = appTokenStorage.getUserById(USER_ID);
-	//
-	// dataGroupToUser.MCR.assertReturn("groupToUser", 0, user);
-	// }
-	//
-	// @Test
-	// public void testGetUserById_throwsError() throws Exception {
-	// RecordNotFoundException error = new RecordNotFoundException("error from spy");
-	// recordStorage.MRV.setThrowException("read", error, List.of("recordType"), "user");
-	//
-	// try {
-	// appTokenStorage.getUserById(USER_ID);
-	// assertTrue(false);
-	// } catch (Exception e) {
-	// assertTrue(e instanceof MetadataStorageViewException);
-	// assertEquals(e.getMessage(),
-	// "Error reading user with id: " + USER_ID + " from storage.");
-	// assertSame(e.getCause(), error);
-	// }
-	// }
-	//
-	// @Test
-	// public void testGetUserByIdFromLogin_usingDependencies() throws Exception {
-	// setupRecordStorageToReturnUserForReadListUsingFilter();
-	//
-	// appTokenStorage.getUserByIdFromLogin(ID_FROM_LOGIN);
-	//
-	// recordStorage.MCR.assertParameterAsEqual("read", 0, "types", List.of("recordType"));
-	// recordStorage.MCR.assertParameterAsEqual("read", 0, "id", "user");
-	//
-	// var userData = recordStorage.MCR.getReturnValue("read", 0);
-	//
-	// recordTypeHandlerFactory.MCR.assertParameters("factorUsingDataGroup", 0, userData);
-	//
-	// RecordTypeHandlerSpy userRecordTypeHandler = (RecordTypeHandlerSpy)
-	// recordTypeHandlerFactory.MCR
-	// .getReturnValue("factorUsingDataGroup", 0);
-	// var listOfUserTypes = userRecordTypeHandler.MCR
-	// .getReturnValue("getListOfImplementingRecordTypeIds", 0);
-	// var filterDataGroup = dataFactorySpy.MCR.getReturnValue("factorGroupUsingNameInData", 0);
-	// recordStorage.MCR.assertParameters("readList", 0, listOfUserTypes, filterDataGroup);
-	// }
-	//
-	// private void setupRecordStorageToReturnUserForReadListUsingFilter() {
-	// DataGroupSpy userDataGroup = new DataGroupSpy();
-	// userDataGroup.MRV.setReturnValues("getAllGroupsWithNameInData", List.of(),
-	// "userAppTokenGroup");
-	// StorageReadResult readResult = new StorageReadResult();
-	// readResult.listOfDataGroups = List.of(userDataGroup);
-	// readResult.totalNumberOfMatches = 1;
-	// recordStorage.MRV.setDefaultReturnValuesSupplier("readList",
-	// (Supplier<StorageReadResult>) () -> readResult);
-	// }
-	//
-	// @Test
-	// public void testGetUserByIdFromLogin_userContainsInfo() throws Exception {
-	// setupRecordStorageToReturnUserForReadListUsingFilter();
-	//
-	// User user = appTokenStorage.getUserByIdFromLogin(ID_FROM_LOGIN);
-	//
-	// dataGroupToUser.MCR.assertReturn("groupToUser", 0, user);
-	// }
-	//
-	// @Test
-	// public void testGetUserByIdFromLogin_filterContainsCorrectInfo() throws Exception {
-	// setupRecordStorageToReturnUserForReadListUsingFilter();
-	//
-	// appTokenStorage.getUserByIdFromLogin(ID_FROM_LOGIN);
-	//
-	// dataFactorySpy.MCR.assertParameters("factorGroupUsingNameInData", 0, "filter");
-	// DataGroupSpy filterDataGroup = (DataGroupSpy) dataFactorySpy.MCR
-	// .getReturnValue("factorGroupUsingNameInData", 0);
-	//
-	// dataFactorySpy.MCR.assertParameters("factorGroupUsingNameInData", 1, "part");
-	// DataGroupSpy partDataGroup = (DataGroupSpy) dataFactorySpy.MCR
-	// .getReturnValue("factorGroupUsingNameInData", 1);
-	// filterDataGroup.MCR.assertParameters("addChild", 0, partDataGroup);
-	//
-	// dataFactorySpy.MCR.assertParameters("factorAtomicUsingNameInDataAndValue", 0, "key",
-	// "userId");
-	// var keyAtomic = dataFactorySpy.MCR.getReturnValue("factorAtomicUsingNameInDataAndValue", 0);
-	// partDataGroup.MCR.assertParameters("addChild", 0, keyAtomic);
-	//
-	// dataFactorySpy.MCR.assertParameters("factorAtomicUsingNameInDataAndValue", 1, "value",
-	// ID_FROM_LOGIN);
-	// var idFromLoginAtomic = dataFactorySpy.MCR
-	// .getReturnValue("factorAtomicUsingNameInDataAndValue", 1);
-	// partDataGroup.MCR.assertParameters("addChild", 1, idFromLoginAtomic);
-	// }
-	//
-	// @Test
-	// public void testGetUserByIdFromLogin_moreThanOneUserFoundInStorage() throws Exception {
-	// setupRecordStorageToReturnUserForReadListUsingFilterNumberOfResults(2);
-	//
-	// try {
-	// appTokenStorage.getUserByIdFromLogin(ID_FROM_LOGIN);
-	// assertTrue(false);
-	// } catch (Exception e) {
-	// assertTrue(e instanceof MetadataStorageViewException);
-	// assertEquals(e.getMessage(),
-	// "Error reading user with login id: " + ID_FROM_LOGIN + " from storage.");
-	// }
-	// }
-	//
-	// @Test
-	// public void testGetUserByIdFromLogin_noUserFoundInStorage() throws Exception {
-	// setupRecordStorageToReturnUserForReadListUsingFilterNumberOfResults(0);
-	//
-	// try {
-	// appTokenStorage.getUserByIdFromLogin(ID_FROM_LOGIN);
-	// assertTrue(false);
-	// } catch (Exception e) {
-	// assertTrue(e instanceof MetadataStorageViewException);
-	// assertEquals(e.getMessage(),
-	// "Error reading user with login id: " + ID_FROM_LOGIN + " from storage.");
-	// }
-	// }
-	//
-	// private void setupRecordStorageToReturnUserForReadListUsingFilterNumberOfResults(
-	// int totalNumberOfMatches) {
-	// DataGroupSpy userDataGroup = new DataGroupSpy();
-	// userDataGroup.MRV.setReturnValues("getAllGroupsWithNameInData", List.of(),
-	// "userAppTokenGroup");
-	// StorageReadResult readResult = new StorageReadResult();
-	// readResult.listOfDataGroups = List.of(userDataGroup, userDataGroup);
-	// readResult.totalNumberOfMatches = totalNumberOfMatches;
-	// recordStorage.MRV.setDefaultReturnValuesSupplier("readList",
-	// (Supplier<StorageReadResult>) () -> readResult);
-	// }
-	//
-	// @Test
-	// public void testGetUserByIdFromLogin_throwsError() throws Exception {
-	// RecordNotFoundException error = new RecordNotFoundException("error from spy");
-	// recordStorage.MRV.setThrowException("read", error, List.of("recordType"), "user");
-	//
-	// try {
-	// appTokenStorage.getUserByIdFromLogin(ID_FROM_LOGIN);
-	// assertTrue(false);
-	// } catch (Exception e) {
-	// assertTrue(e instanceof MetadataStorageViewException);
-	// assertEquals(e.getMessage(),
-	// "Error reading user with login id: " + ID_FROM_LOGIN + " from storage.");
-	// assertSame(e.getCause(), error);
-	// }
-	// }
-	//
-	// @Test
-	// public void testGetAppTokenById() throws Exception {
-	// AppToken appToken = appTokenStorage.getAppTokenById(APP_TOKEN_ID);
-	//
-	// recordStorage.MCR.assertParameterAsEqual("read", 0, "types", List.of("appToken"));
-	// recordStorage.MCR.assertParameterAsEqual("read", 0, "id", APP_TOKEN_ID);
-	//
-	// DataGroupSpy appTokenData = (DataGroupSpy) recordStorage.MCR.getReturnValue("read", 0);
-	//
-	// assertEquals(appToken.id, APP_TOKEN_ID);
-	//
-	// appTokenData.MCR.assertParameters("getFirstAtomicValueWithNameInData", 0, "token");
-	// appTokenData.MCR.assertReturn("getFirstAtomicValueWithNameInData", 0, appToken.tokenString);
-	// }
-	//
-	// @Test
-	// public void testGetAppTokenById_throwsError() throws Exception {
-	// RecordNotFoundException error = new RecordNotFoundException("error from spy");
-	// recordStorage.MRV.setThrowException("read", error, List.of("appToken"), APP_TOKEN_ID);
-	//
-	// try {
-	// appTokenStorage.getAppTokenById(APP_TOKEN_ID);
-	// assertTrue(false);
-	// } catch (Exception e) {
-	// assertTrue(e instanceof MetadataStorageViewException);
-	// assertEquals(e.getMessage(),
-	// "Error reading appToken with id: " + APP_TOKEN_ID + " from storage.");
-	// assertSame(e.getCause(), error);
-	// }
-	// }
+	private void callAndAssertListFromStorageByRecordType(String recordType,
+			Callable<Collection<DataGroup>> methodToCall) throws Exception {
+		Collection<DataGroup> result = methodToCall.call();
+		assertCollectionFromStorage(recordType, result);
+	}
+
+	private void assertCollectionFromStorage(String recordType, Collection<DataGroup> result) {
+		var listOfImplementingTypes = assertAndGetImplementingTypes(recordType);
+		assertExpectedCollection(result, listOfImplementingTypes);
+	}
+
+	private void assertExpectedCollection(Collection<DataGroup> result,
+			Object listOfImplementingTypes) {
+		var emptyFilter = dataFactorySpy.MCR.getReturnValue("factorGroupUsingNameInData", 0);
+		recordStorage.MCR.assertParameter("readList", 0, "types", listOfImplementingTypes);
+		recordStorage.MCR.assertParameter("readList", 0, "filter", emptyFilter);
+
+		StorageReadResult readResult = (StorageReadResult) recordStorage.MCR
+				.getReturnValue("readList", 0);
+
+		assertSame(result, readResult.listOfDataGroups);
+	}
+
+	private Object assertAndGetImplementingTypes(String recordType) {
+		recordStorage.MCR.assertParameterAsEqual("read", 0, "types", List.of("recordType"));
+		recordStorage.MCR.assertParameterAsEqual("read", 0, "id", recordType);
+
+		var metadataRecordType = recordStorage.MCR.getReturnValue("read", 0);
+
+		recordTypeHandlerFactory.MCR.assertParameters("factorUsingDataGroup", 0,
+				metadataRecordType);
+		RecordTypeHandlerSpy recordTypeHandler = (RecordTypeHandlerSpy) recordTypeHandlerFactory.MCR
+				.getReturnValue("factorUsingDataGroup", 0);
+
+		var listOfImplementingTypes = recordTypeHandler.MCR
+				.getReturnValue("getListOfImplementingRecordTypeIds", 0);
+		return listOfImplementingTypes;
+	}
+
+	@Test
+	public void testGetPresentationElements() throws Exception {
+		callAndAssertListFromStorageByRecordType("presentation",
+				metadataStorage::getPresentationElements);
+	}
+
+	@Test
+	public void testGetTexts() throws Exception {
+		callAndAssertListFromStorageByRecordType("text", metadataStorage::getTexts);
+	}
+
+	@Test
+	public void testGetRecordTypes() throws Exception {
+		callAndAssertListFromStorageByRecordType("recordType", metadataStorage::getRecordTypes);
+	}
+
+	@Test
+	public void testGetCollectTerms() throws Exception {
+		callAndAssertListFromStorageByRecordType("collectTerm", metadataStorage::getCollectTerms);
+	}
+
+	@Test
+	public void testAllExceptions() throws Exception {
+		testGetMetadataElementsThrowsException(metadataStorage::getMetadataElements);
+		testGetMetadataElementsThrowsException(metadataStorage::getPresentationElements);
+		testGetMetadataElementsThrowsException(metadataStorage::getTexts);
+		testGetMetadataElementsThrowsException(metadataStorage::getRecordTypes);
+		testGetMetadataElementsThrowsException(metadataStorage::getCollectTerms);
+	}
+
+	private void testGetMetadataElementsThrowsException(
+			Callable<Collection<DataGroup>> methodToCall) {
+		RuntimeException errorToThrow = new RuntimeException();
+		recordStorage.MRV.setAlwaysThrowException("read", errorToThrow);
+
+		try {
+			methodToCall.call();
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof MetadataStorageViewException);
+			assertEquals(e.getMessage(), "Error getting metadata elements from storage.");
+			assertEquals(e.getCause(), errorToThrow);
+		}
+	}
 }
