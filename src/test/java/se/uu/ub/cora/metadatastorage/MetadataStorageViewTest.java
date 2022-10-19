@@ -126,7 +126,15 @@ public class MetadataStorageViewTest {
 
 	@Test
 	public void testGetRecordTypes() throws Exception {
-		callAndAssertListFromStorageByRecordType("recordType", metadataStorage::getRecordTypes);
+		var recordTypes = metadataStorage.getRecordTypes();
+
+		recordStorage.MCR.assertParameterAsEqual("readList", 0, "types", List.of("recordType"));
+		var emptyFilter = dataFactorySpy.MCR.getReturnValue("factorGroupUsingNameInData", 0);
+		recordStorage.MCR.assertParameter("readList", 0, "filter", emptyFilter);
+		StorageReadResult readResult = (StorageReadResult) recordStorage.MCR
+				.getReturnValue("readList", 0);
+
+		assertSame(recordTypes, readResult.listOfDataGroups);
 	}
 
 	@Test
@@ -146,7 +154,7 @@ public class MetadataStorageViewTest {
 	private void testGetMetadataElementsThrowsException(
 			Callable<Collection<DataGroup>> methodToCall) {
 		RuntimeException errorToThrow = new RuntimeException();
-		recordStorage.MRV.setAlwaysThrowException("read", errorToThrow);
+		recordStorage.MRV.setAlwaysThrowException("readList", errorToThrow);
 
 		try {
 			methodToCall.call();

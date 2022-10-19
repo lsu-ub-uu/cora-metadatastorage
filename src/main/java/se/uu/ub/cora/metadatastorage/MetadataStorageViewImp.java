@@ -54,8 +54,7 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 		try {
 			return tryToReadMetadataElementsFromStorageForType(recordType);
 		} catch (Exception e) {
-			throw MetadataStorageViewException
-					.usingMessageAndException("Error getting metadata elements from storage.", e);
+			throw createMetadataStorageException(e);
 		}
 	}
 
@@ -89,7 +88,17 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	@Override
 	public Collection<DataGroup> getRecordTypes() {
-		return readMetadataElementsFromStorageForType("recordType");
+		try {
+			return readListOfElementsFromStorage(List.of("recordType"));
+		} catch (Exception e) {
+			throw createMetadataStorageException(e);
+		}
+
+	}
+
+	private MetadataStorageViewException createMetadataStorageException(Exception e) {
+		return MetadataStorageViewException
+				.usingMessageAndException("Error getting metadata elements from storage.", e);
 	}
 
 	@Override
