@@ -37,8 +37,7 @@
 		<spider.version>7.3.0</spider.version>
 		<logger.version>2.5.0</logger.version>
 		<coradata.version>7.2.0</coradata.version>
-		<basicdata.version>5.0.0</basicdata.version>
-		<beefeater.version>3.8.0</beefeater.version>
+ 		<beefeater.version>3.8.0</beefeater.version>
 		<bookkeeper.version>8.0.0</bookkeeper.version>
 		<search.version>5.0.0</search.version>
 		<json.version>3.4.0</json.version>
@@ -103,12 +102,6 @@
 			<groupId>se.uu.ub.cora</groupId>
 			<artifactId>coradata</artifactId>
 			<version>${coradata.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>se.uu.ub.cora</groupId>
-			<artifactId>basicdata</artifactId>
-			<version>${basicdata.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
