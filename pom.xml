@@ -32,20 +32,20 @@
 	<name>metadatastorage</name>
 	
 	<properties>
-		<gatekeeper.version>4.0-SNAPSHOT</gatekeeper.version>
-		<storage.version>7.0-SNAPSHOT</storage.version>
-		<spider.version>7.3-SNAPSHOT</spider.version>
+		<gatekeeper.version>4.0.0</gatekeeper.version>
+		<storage.version>7.0.0</storage.version>
+		<spider.version>7.3.0</spider.version>
 		<logger.version>2.5.0</logger.version>
-		<coradata.version>7.2-SNAPSHOT</coradata.version>
-		<basicdata.version>5.0-SNAPSHOT</basicdata.version>
-		<beefeater.version>3.7.0</beefeater.version>
-		<bookkeeper.version>8.0-SNAPSHOT</bookkeeper.version>
-		<search.version>5.0-SNAPSHOT</search.version>
-		<json.version>3.3.0</json.version>
-		<initialize.version>1.0-SNAPSHOT</initialize.version>
-		<testutils.version>1.6-SNAPSHOT</testutils.version>
-		<storagespies.version>1.0-SNAPSHOT</storagespies.version>
-		<loggerspies.version>1.0-SNAPSHOT</loggerspies.version>
+		<coradata.version>7.2.0</coradata.version>
+		<basicdata.version>5.0.0</basicdata.version>
+		<beefeater.version>3.8.0</beefeater.version>
+		<bookkeeper.version>8.0.0</bookkeeper.version>
+		<search.version>5.0.0</search.version>
+		<json.version>3.4.0</json.version>
+		<initialize.version>1.0.0</initialize.version>
+		<testutils.version>1.6.0</testutils.version>
+		<storagespies.version>1.0.0</storagespies.version>
+		<loggerspies.version>1.0.0</loggerspies.version>
 		<servlet-api.version>5.0.0</servlet-api.version>
 	</properties>
 
