@@ -33,7 +33,8 @@
 	
 	<properties>
 		<gatekeeper.version>4.3.0</gatekeeper.version>
-		<storage.version>7.3.0</storage.version>
+		<storage.version>8.0-SNAPSHOT</storage.version>
+		<storagespies.version>1.4-SNAPSHOT</storagespies.version>
 		<spider.version>7.6.0</spider.version>
 		<logger.version>2.8.0</logger.version>
 		<coradata.version>7.5.0</coradata.version>
@@ -43,9 +44,7 @@
 		<json.version>3.7.0</json.version>
 		<initialize.version>1.3.0</initialize.version>
 		<testutils.version>1.9.0</testutils.version>
-		<storagespies.version>1.3.0</storagespies.version>
 		<loggerspies.version>1.3.0</loggerspies.version>
-		<servlet-api.version>5.0.0</servlet-api.version>
 	</properties>
 
 	<scm>
@@ -67,6 +66,12 @@
 			<artifactId>storage</artifactId>
 			<version>${storage.version}</version>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>storage-spies</artifactId>
+			<version>${storagespies.version}</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>se.uu.ub.cora</groupId>
@@ -123,12 +128,6 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>se.uu.ub.cora</groupId>
-			<artifactId>storage-spies</artifactId>
-			<version>${storagespies.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.testng</groupId>
 			<artifactId>testng</artifactId>
 			<version>${testng.version}</version>
@@ -139,12 +138,6 @@
 			<artifactId>logger-spies</artifactId>
 			<version>${loggerspies.version}</version>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>jakarta.servlet</groupId>
-			<artifactId>jakarta.servlet-api</artifactId>
-			<version>${servlet-api.version}</version>
-			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
