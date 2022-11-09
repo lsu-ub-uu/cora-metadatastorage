@@ -19,6 +19,7 @@
 package se.uu.ub.cora.metadatastorage;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
@@ -38,6 +39,7 @@ import se.uu.ub.cora.data.spies.DataFactorySpy;
 import se.uu.ub.cora.data.spies.DataGroupSpy;
 import se.uu.ub.cora.metadatastorage.spies.RecordTypeHandlerFactorySpy;
 import se.uu.ub.cora.metadatastorage.spies.RecordTypeHandlerSpy;
+import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.StorageReadResult;
 import se.uu.ub.cora.storage.spies.RecordStorageSpy;
 
@@ -87,14 +89,19 @@ public class MetadataStorageViewTest {
 
 	private void assertExpectedCollection(Collection<DataGroup> result,
 			Object listOfImplementingTypes) {
-		var emptyFilter = dataFactorySpy.MCR.getReturnValue("factorGroupUsingNameInData", 0);
 		recordStorage.MCR.assertParameter("readList", 0, "types", listOfImplementingTypes);
-		recordStorage.MCR.assertParameter("readList", 0, "filter", emptyFilter);
+		assertEmptyFilter();
 
 		StorageReadResult readResult = (StorageReadResult) recordStorage.MCR
 				.getReturnValue("readList", 0);
 
 		assertSame(result, readResult.listOfDataGroups);
+	}
+
+	private void assertEmptyFilter() {
+		Filter filter = (Filter) recordStorage.MCR
+				.getValueForMethodNameAndCallNumberAndParameterName("readList", 0, "filter");
+		assertFalse(filter.filtersResults());
 	}
 
 	private Object assertAndGetImplementingTypes(String recordType) {
@@ -129,8 +136,7 @@ public class MetadataStorageViewTest {
 		var recordTypes = metadataStorage.getRecordTypes();
 
 		recordStorage.MCR.assertParameterAsEqual("readList", 0, "types", List.of("recordType"));
-		var emptyFilter = dataFactorySpy.MCR.getReturnValue("factorGroupUsingNameInData", 0);
-		recordStorage.MCR.assertParameter("readList", 0, "filter", emptyFilter);
+		assertEmptyFilter();
 		StorageReadResult readResult = (StorageReadResult) recordStorage.MCR
 				.getReturnValue("readList", 0);
 
