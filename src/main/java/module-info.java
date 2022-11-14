@@ -3,4 +3,5 @@ module se.uu.ub.cora.metadatastorage {
 	requires se.uu.ub.cora.gatekeeper;
 	requires se.uu.ub.cora.logger;
 	requires se.uu.ub.cora.spider;
+	requires se.uu.ub.cora.storage;
 }

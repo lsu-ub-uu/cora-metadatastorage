@@ -24,9 +24,9 @@ import java.util.List;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.data.DataGroup;
-import se.uu.ub.cora.data.DataProvider;
 import se.uu.ub.cora.spider.recordtype.RecordTypeHandler;
 import se.uu.ub.cora.spider.recordtype.internal.RecordTypeHandlerFactory;
+import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordStorage;
 import se.uu.ub.cora.storage.StorageReadResult;
 
@@ -71,8 +71,7 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 	}
 
 	private Collection<DataGroup> readListOfElementsFromStorage(List<String> listOfTypeIds) {
-		StorageReadResult readResult = recordStorage.readList(listOfTypeIds,
-				DataProvider.createGroupUsingNameInData("filter"));
+		StorageReadResult readResult = recordStorage.readList(listOfTypeIds, new Filter());
 		return readResult.listOfDataGroups;
 	}
 
