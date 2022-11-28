@@ -71,7 +71,11 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 	}
 
 	private Collection<DataGroup> readListOfElementsFromStorage(List<String> listOfTypeIds) {
+		long t1 = System.currentTimeMillis();
 		StorageReadResult readResult = recordStorage.readList(listOfTypeIds, new Filter());
+		long t2 = System.currentTimeMillis();
+		System.out.println(
+				"ReadList from metadataStorage (" + (t2 - t1) + "): " + listOfTypeIds.toString());
 		return readResult.listOfDataGroups;
 	}
 
