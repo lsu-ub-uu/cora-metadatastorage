@@ -37,7 +37,7 @@
 		<storagespies.version>1.4.0</storagespies.version>
 		<spider.version>7.7.0</spider.version>
 		<logger.version>2.8.0</logger.version>
-		<basicdata.version>5.4.0</basicdata.version>
+		<coradata.version>5.4.0</coradata.version>
  		<beefeater.version>3.11.0</beefeater.version>
 		<bookkeeper.version>9.0.0</bookkeeper.version>
 		<search.version>5.4.0</search.version>
@@ -105,8 +105,8 @@
 		</dependency>
 		<dependency>
 			<groupId>se.uu.ub.cora</groupId>
-			<artifactId>basicdata</artifactId>
-			<version>${basicdata.version}</version>
+			<artifactId>coradata</artifactId>
+			<version>${coradata.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
