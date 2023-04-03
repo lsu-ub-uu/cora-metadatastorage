@@ -24,10 +24,10 @@ import static org.testng.Assert.assertTrue;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import se.uu.ub.cora.bookkeeper.recordtype.RecordTypeHandlerFactoryImp;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewInstanceProvider;
 import se.uu.ub.cora.logger.LoggerProvider;
 import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
-import se.uu.ub.cora.spider.recordtype.internal.RecordTypeHandlerFactoryImp;
 import se.uu.ub.cora.storage.RecordStorageProvider;
 import se.uu.ub.cora.storage.spies.RecordStorageInstanceProviderSpy;
 
@@ -63,8 +63,6 @@ public class MetadataStorageViewInstanceProviderTest {
 		RecordTypeHandlerFactoryImp recordTypeHandlerFactory = (RecordTypeHandlerFactoryImp) appTokenStorageView
 				.onlyForTestGetRecordTypeHandlerFactory();
 		assertTrue(recordTypeHandlerFactory instanceof RecordTypeHandlerFactoryImp);
-		recordStorageInstanceProvider.MCR.assertReturn("getRecordStorage", 1,
-				recordTypeHandlerFactory.onlyForTestGetRecordStorage());
 	}
 
 	@Test

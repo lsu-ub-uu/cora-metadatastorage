@@ -21,11 +21,12 @@ package se.uu.ub.cora.metadatastorage;
 import java.util.Collection;
 import java.util.List;
 
+import se.uu.ub.cora.bookkeeper.recordtype.RecordTypeHandler;
+import se.uu.ub.cora.bookkeeper.recordtype.RecordTypeHandlerFactory;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
+import se.uu.ub.cora.bookkeeper.validator.ValidationType;
 import se.uu.ub.cora.data.DataGroup;
-import se.uu.ub.cora.spider.recordtype.RecordTypeHandler;
-import se.uu.ub.cora.spider.recordtype.internal.RecordTypeHandlerFactory;
 import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordStorage;
 import se.uu.ub.cora.storage.StorageReadResult;
@@ -111,5 +112,11 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	public RecordTypeHandlerFactory onlyForTestGetRecordTypeHandlerFactory() {
 		return recordTypeHandlerFactory;
+	}
+
+	@Override
+	public Collection<ValidationType> getValidationTypes() {
+		// TODO
+		return null;
 	}
 }
