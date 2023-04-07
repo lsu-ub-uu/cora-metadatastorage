@@ -20,6 +20,7 @@ package se.uu.ub.cora.metadatastorage;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import se.uu.ub.cora.bookkeeper.recordtype.RecordTypeHandler;
 import se.uu.ub.cora.bookkeeper.recordtype.RecordTypeHandlerFactory;
@@ -118,5 +119,11 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 	public Collection<ValidationType> getValidationTypes() {
 		// TODO
 		return null;
+	}
+
+	@Override
+	public Optional<ValidationType> getValidationType(String validationId) {
+		// TODO Auto-generated method stub
+		return Optional.empty();
 	}
 }
