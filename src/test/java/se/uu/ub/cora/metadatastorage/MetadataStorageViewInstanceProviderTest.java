@@ -69,4 +69,5 @@ public class MetadataStorageViewInstanceProviderTest {
 	public void testGetOrderToSelectImplemtationsBy() throws Exception {
 		assertEquals(instanceProvider.getOrderToSelectImplementionsBy(), 0);
 	}
+
 }
