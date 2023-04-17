@@ -18,14 +18,18 @@
  */
 package se.uu.ub.cora.metadatastorage;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
+import se.uu.ub.cora.bookkeeper.recordtype.RecordTypeHandler;
+import se.uu.ub.cora.bookkeeper.recordtype.RecordTypeHandlerFactory;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
+import se.uu.ub.cora.bookkeeper.validator.ValidationType;
 import se.uu.ub.cora.data.DataGroup;
-import se.uu.ub.cora.spider.recordtype.RecordTypeHandler;
-import se.uu.ub.cora.spider.recordtype.internal.RecordTypeHandlerFactory;
+import se.uu.ub.cora.data.DataRecordLink;
 import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordStorage;
 import se.uu.ub.cora.storage.StorageReadResult;
@@ -111,5 +115,50 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	public RecordTypeHandlerFactory onlyForTestGetRecordTypeHandlerFactory() {
 		return recordTypeHandlerFactory;
+	}
+
+	@Override
+	public Collection<ValidationType> getValidationTypes() {
+		StorageReadResult readList = recordStorage.readList(List.of("validationType"),
+				new Filter());
+		return convertToCollectionOfValidationTypes(readList);
+	}
+
+	private List<ValidationType> convertToCollectionOfValidationTypes(StorageReadResult readList) {
+		List<ValidationType> listOfValidationTypes = new ArrayList<>();
+		for (DataGroup dataGroup : readList.listOfDataGroups) {
+			ValidationType validationType = createValidationTypeFromDataGroup(dataGroup);
+			listOfValidationTypes.add(validationType);
+		}
+		return listOfValidationTypes;
+	}
+
+	private ValidationType createValidationTypeFromDataGroup(DataGroup dataGroup) {
+		String validatesRecordTypeId = getLinkedRecordIdForLinkByName(dataGroup,
+				"validatesRecordType");
+		String createDefinitionId = getLinkedRecordIdForLinkByName(dataGroup, "newMetadataId");
+		String updateDefinitionId = getLinkedRecordIdForLinkByName(dataGroup, "metadataId");
+		return new ValidationType(validatesRecordTypeId, createDefinitionId, updateDefinitionId);
+	}
+
+	private String getLinkedRecordIdForLinkByName(DataGroup dataGroup, String name) {
+		DataRecordLink firstChildOfTypeAndName = dataGroup
+				.getFirstChildOfTypeAndName(DataRecordLink.class, name);
+		return firstChildOfTypeAndName.getLinkedRecordId();
+	}
+
+	@Override
+	public Optional<ValidationType> getValidationType(String validationId) {
+		try {
+			return readValidationTypeFromStorageById(validationId);
+		} catch (Exception e) {
+			return Optional.empty();
+		}
+	}
+
+	private Optional<ValidationType> readValidationTypeFromStorageById(String validationId) {
+		DataGroup validationTypeDG = recordStorage.read(List.of("validationType"), validationId);
+		ValidationType validationType = createValidationTypeFromDataGroup(validationTypeDG);
+		return Optional.of(validationType);
 	}
 }
