@@ -23,8 +23,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import se.uu.ub.cora.bookkeeper.recordtype.RecordTypeHandler;
-import se.uu.ub.cora.bookkeeper.recordtype.RecordTypeHandlerFactory;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
@@ -36,17 +34,14 @@ import se.uu.ub.cora.storage.StorageReadResult;
 
 public class MetadataStorageViewImp implements MetadataStorageView {
 	private RecordStorage recordStorage;
-	private RecordTypeHandlerFactory recordTypeHandlerFactory;
 
 	public static MetadataStorageViewImp usingRecordStorageAndRecordTypeHandlerFactory(
-			RecordStorage recordStorage, RecordTypeHandlerFactory recordTypeHandlerFactory) {
-		return new MetadataStorageViewImp(recordStorage, recordTypeHandlerFactory);
+			RecordStorage recordStorage) {
+		return new MetadataStorageViewImp(recordStorage);
 	}
 
-	private MetadataStorageViewImp(RecordStorage recordStorage,
-			RecordTypeHandlerFactory recordTypeHandlerFactory) {
+	private MetadataStorageViewImp(RecordStorage recordStorage) {
 		this.recordStorage = recordStorage;
-		this.recordTypeHandlerFactory = recordTypeHandlerFactory;
 	}
 
 	@Override
@@ -63,15 +58,7 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 	}
 
 	private Collection<DataGroup> tryToReadMetadataElementsFromStorageForType(String recordType) {
-		List<String> listOfTypeIds = createListOfElementTypesUsingRecordHandler(recordType);
-		return readListOfElementsFromStorage(listOfTypeIds);
-	}
-
-	private List<String> createListOfElementTypesUsingRecordHandler(String recordType) {
-		var recordTypeDataGroup = recordStorage.read(List.of("recordType"), recordType);
-		RecordTypeHandler recordTypeHandler = recordTypeHandlerFactory
-				.factorUsingDataGroup(recordTypeDataGroup);
-		return recordTypeHandler.getListOfImplementingRecordTypeIds();
+		return readListOfElementsFromStorage(List.of(recordType));
 	}
 
 	private Collection<DataGroup> readListOfElementsFromStorage(List<String> listOfTypeIds) {
@@ -111,10 +98,6 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	public RecordStorage onlyForTestGetRecordStorage() {
 		return recordStorage;
-	}
-
-	public RecordTypeHandlerFactory onlyForTestGetRecordTypeHandlerFactory() {
-		return recordTypeHandlerFactory;
 	}
 
 	@Override
