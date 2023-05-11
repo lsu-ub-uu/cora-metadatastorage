@@ -36,7 +36,6 @@ public class MetadataStorageViewInstanceProviderImp implements MetadataStorageVi
 	public MetadataStorageView getStorageView() {
 		RecordStorage recordStorage = RecordStorageProvider.getRecordStorage();
 		RecordTypeHandlerFactory recordTypeHandlerFactory = new RecordTypeHandlerFactoryImp();
-		return MetadataStorageViewImp.usingRecordStorageAndRecordTypeHandlerFactory(recordStorage,
-				recordTypeHandlerFactory);
+		return MetadataStorageViewImp.usingRecordStorageAndRecordTypeHandlerFactory(recordStorage);
 	}
 }

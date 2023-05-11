@@ -42,8 +42,6 @@ import se.uu.ub.cora.data.DataRecordLink;
 import se.uu.ub.cora.data.spies.DataFactorySpy;
 import se.uu.ub.cora.data.spies.DataGroupSpy;
 import se.uu.ub.cora.data.spies.DataRecordLinkSpy;
-import se.uu.ub.cora.metadatastorage.spies.RecordTypeHandlerFactorySpy;
-import se.uu.ub.cora.metadatastorage.spies.RecordTypeHandlerSpy;
 import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordNotFoundException;
 import se.uu.ub.cora.storage.StorageReadResult;
@@ -52,7 +50,6 @@ import se.uu.ub.cora.storage.spies.RecordStorageSpy;
 public class MetadataStorageViewTest {
 	private MetadataStorageView metadataStorage;
 	private RecordStorageSpy recordStorage;
-	private RecordTypeHandlerFactorySpy recordTypeHandlerFactory;
 	private DataFactorySpy dataFactorySpy;
 	private StorageReadResult resultWithValues;
 
@@ -66,9 +63,8 @@ public class MetadataStorageViewTest {
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList",
 				(Supplier<StorageReadResult>) () -> resultWithValues);
 
-		recordTypeHandlerFactory = new RecordTypeHandlerFactorySpy();
-		metadataStorage = MetadataStorageViewImp.usingRecordStorageAndRecordTypeHandlerFactory(
-				recordStorage, recordTypeHandlerFactory);
+		metadataStorage = MetadataStorageViewImp
+				.usingRecordStorageAndRecordTypeHandlerFactory(recordStorage);
 	}
 
 	private void createReadResultWithValues() {
@@ -89,13 +85,11 @@ public class MetadataStorageViewTest {
 	}
 
 	private void assertCollectionFromStorage(String recordType, Collection<DataGroup> result) {
-		var listOfImplementingTypes = assertAndGetImplementingTypes(recordType);
-		assertExpectedCollection(result, listOfImplementingTypes);
+		assertExpectedCollection(recordType, result);
 	}
 
-	private void assertExpectedCollection(Collection<DataGroup> result,
-			Object listOfImplementingTypes) {
-		recordStorage.MCR.assertParameter("readList", 0, "types", listOfImplementingTypes);
+	private void assertExpectedCollection(String recordType, Collection<DataGroup> result) {
+		recordStorage.MCR.assertParameterAsEqual("readList", 0, "types", List.of(recordType));
 		assertEmptyFilter();
 
 		StorageReadResult readResult = (StorageReadResult) recordStorage.MCR
@@ -108,22 +102,6 @@ public class MetadataStorageViewTest {
 		Filter filter = (Filter) recordStorage.MCR
 				.getValueForMethodNameAndCallNumberAndParameterName("readList", 0, "filter");
 		assertFalse(filter.filtersResults());
-	}
-
-	private Object assertAndGetImplementingTypes(String recordType) {
-		recordStorage.MCR.assertParameterAsEqual("read", 0, "types", List.of("recordType"));
-		recordStorage.MCR.assertParameterAsEqual("read", 0, "id", recordType);
-
-		var metadataRecordType = recordStorage.MCR.getReturnValue("read", 0);
-
-		recordTypeHandlerFactory.MCR.assertParameters("factorUsingDataGroup", 0,
-				metadataRecordType);
-		RecordTypeHandlerSpy recordTypeHandler = (RecordTypeHandlerSpy) recordTypeHandlerFactory.MCR
-				.getReturnValue("factorUsingDataGroup", 0);
-
-		var listOfImplementingTypes = recordTypeHandler.MCR
-				.getReturnValue("getListOfImplementingRecordTypeIds", 0);
-		return listOfImplementingTypes;
 	}
 
 	@Test
