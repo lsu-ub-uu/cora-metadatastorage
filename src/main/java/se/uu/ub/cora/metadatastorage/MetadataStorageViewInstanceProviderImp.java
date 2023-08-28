@@ -18,8 +18,6 @@
  */
 package se.uu.ub.cora.metadatastorage;
 
-import se.uu.ub.cora.bookkeeper.recordtype.RecordTypeHandlerFactory;
-import se.uu.ub.cora.bookkeeper.recordtype.RecordTypeHandlerFactoryImp;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewInstanceProvider;
 import se.uu.ub.cora.storage.RecordStorage;
@@ -35,7 +33,6 @@ public class MetadataStorageViewInstanceProviderImp implements MetadataStorageVi
 	@Override
 	public MetadataStorageView getStorageView() {
 		RecordStorage recordStorage = RecordStorageProvider.getRecordStorage();
-		RecordTypeHandlerFactory recordTypeHandlerFactory = new RecordTypeHandlerFactoryImp();
 		return MetadataStorageViewImp.usingRecordStorageAndRecordTypeHandlerFactory(recordStorage);
 	}
 }
