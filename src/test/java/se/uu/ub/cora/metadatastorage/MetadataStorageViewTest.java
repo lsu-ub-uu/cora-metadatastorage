@@ -227,7 +227,7 @@ public class MetadataStorageViewTest {
 
 	@Test
 	public void testValidationTypeDoesNotExistInStorage() throws Exception {
-		recordStorage.MRV.setThrowException("read", new RecordNotFoundException("not found"));
+		recordStorage.MRV.setThrowException("read", RecordNotFoundException.withMessage("not found"));
 
 		Optional<ValidationType> validationType = metadataStorage
 				.getValidationType("someValidationTypeId");
