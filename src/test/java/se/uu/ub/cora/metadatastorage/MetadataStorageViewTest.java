@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Uppsala University Library
+ * Copyright 2022, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -41,6 +40,7 @@ import se.uu.ub.cora.data.DataProvider;
 import se.uu.ub.cora.data.DataRecordLink;
 import se.uu.ub.cora.data.spies.DataFactorySpy;
 import se.uu.ub.cora.data.spies.DataGroupSpy;
+import se.uu.ub.cora.data.spies.DataRecordGroupSpy;
 import se.uu.ub.cora.data.spies.DataRecordLinkSpy;
 import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordNotFoundException;
@@ -60,8 +60,7 @@ public class MetadataStorageViewTest {
 
 		recordStorage = new RecordStorageSpy();
 		createReadResultWithValues();
-		recordStorage.MRV.setDefaultReturnValuesSupplier("readList",
-				(Supplier<StorageReadResult>) () -> resultWithValues);
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> resultWithValues);
 
 		metadataStorage = MetadataStorageViewImp
 				.usingRecordStorageAndRecordTypeHandlerFactory(recordStorage);
@@ -164,13 +163,15 @@ public class MetadataStorageViewTest {
 
 		Collection<ValidationType> validationTypes = metadataStorage.getValidationTypes();
 
-		recordStorage.MCR.assertParameterAsEqual("readList", 0, "types", List.of("validationType"));
+		recordStorage.MCR.assertParameter("readList", 0, "type", "validationType");
+		assertFilterSentToReadListIsCreated();
+		assertEquals(validationTypes.size(), 0);
+	}
+
+	private void assertFilterSentToReadListIsCreated() {
 		Object filter = recordStorage.MCR
 				.getValueForMethodNameAndCallNumberAndParameterName("readList", 0, "filter");
-
 		assertTrue(filter instanceof Filter);
-		assertEquals(validationTypes.size(), 0);
-
 	}
 
 	@Test
@@ -183,10 +184,10 @@ public class MetadataStorageViewTest {
 	}
 
 	private void setUpRecordStorageToReturnTwoDataGroupsForValidationType() {
-		DataGroupSpy validationTypeDG1 = createDataGroupWithDataForValidationType("1");
-		DataGroupSpy validationTypeDG2 = createDataGroupWithDataForValidationType("2");
+		DataRecordGroupSpy validationTypeDG1 = createDataGroupWithDataForValidationType("1");
+		DataRecordGroupSpy validationTypeDG2 = createDataGroupWithDataForValidationType("2");
 		StorageReadResult storageReadResult = new StorageReadResult();
-		storageReadResult.listOfDataGroups = List.of(validationTypeDG1, validationTypeDG2);
+		storageReadResult.listOfDataRecordGroups = List.of(validationTypeDG1, validationTypeDG2);
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
 	}
 
@@ -201,33 +202,34 @@ public class MetadataStorageViewTest {
 		assertTrue(validationTypes.contains(validationType2));
 	}
 
-	public DataGroupSpy createDataGroupWithDataForValidationType(String suffix) {
-		DataGroupSpy dataGroup = new DataGroupSpy();
+	public DataRecordGroupSpy createDataGroupWithDataForValidationType(String suffix) {
+		DataRecordGroupSpy dataRecordGroup = new DataRecordGroupSpy();
 
 		DataRecordLinkSpy validatesRecordType = new DataRecordLinkSpy();
 		validatesRecordType.MRV.setDefaultReturnValuesSupplier("getLinkedRecordId",
 				() -> "someRecordTypeToValidates" + suffix);
-		dataGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
+		dataRecordGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
 				() -> validatesRecordType, DataRecordLink.class, "validatesRecordType");
 
 		DataRecordLinkSpy newMetadataId = new DataRecordLinkSpy();
 		newMetadataId.MRV.setDefaultReturnValuesSupplier("getLinkedRecordId",
 				() -> "createDefinitionId" + suffix);
-		dataGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
+		dataRecordGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
 				() -> newMetadataId, DataRecordLink.class, "newMetadataId");
 
 		DataRecordLinkSpy metadataId = new DataRecordLinkSpy();
 		metadataId.MRV.setDefaultReturnValuesSupplier("getLinkedRecordId",
 				() -> "updateDefinitionId" + suffix);
-		dataGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
+		dataRecordGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
 				() -> metadataId, DataRecordLink.class, "metadataId");
 
-		return dataGroup;
+		return dataRecordGroup;
 	}
 
 	@Test
 	public void testValidationTypeDoesNotExistInStorage() throws Exception {
-		recordStorage.MRV.setThrowException("read", RecordNotFoundException.withMessage("not found"));
+		recordStorage.MRV.setThrowException("read",
+				RecordNotFoundException.withMessage("not found"));
 
 		Optional<ValidationType> validationType = metadataStorage
 				.getValidationType("someValidationTypeId");
@@ -249,11 +251,16 @@ public class MetadataStorageViewTest {
 	}
 
 	private void setUpRecordStorageForReadForOneValidationType() {
-		DataGroupSpy validationTypeDG1 = createDataGroupWithDataForValidationType("1");
-		DataGroupSpy validationTypeDG2 = createDataGroupWithDataForValidationType("2");
+		DataRecordGroupSpy validationTypeDG1 = createDataGroupWithDataForValidationType("1");
+		DataRecordGroupSpy validationTypeDG2 = createDataGroupWithDataForValidationType("2");
 		recordStorage.MRV.setSpecificReturnValuesSupplier("read", () -> validationTypeDG1,
-				List.of("validationType"), "someValidationTypeId1");
+				"validationType", "someValidationTypeId1");
 		recordStorage.MRV.setSpecificReturnValuesSupplier("read", () -> validationTypeDG2,
-				List.of("validationType"), "someValidationTypeId2");
+				"validationType", "someValidationTypeId2");
+	}
+
+	@Test
+	public void testName() throws Exception {
+
 	}
 }

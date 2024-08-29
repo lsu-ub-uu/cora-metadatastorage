@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Uppsala University Library
+ * Copyright 2022, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -27,6 +27,7 @@ import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
 import se.uu.ub.cora.data.DataGroup;
+import se.uu.ub.cora.data.DataRecordGroup;
 import se.uu.ub.cora.data.DataRecordLink;
 import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordStorage;
@@ -102,30 +103,30 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	@Override
 	public Collection<ValidationType> getValidationTypes() {
-		StorageReadResult readList = recordStorage.readList(List.of("validationType"),
-				new Filter());
+		StorageReadResult readList = recordStorage.readList("validationType", new Filter());
 		return convertToCollectionOfValidationTypes(readList);
 	}
 
 	private List<ValidationType> convertToCollectionOfValidationTypes(StorageReadResult readList) {
 		List<ValidationType> listOfValidationTypes = new ArrayList<>();
-		for (DataGroup dataGroup : readList.listOfDataGroups) {
-			ValidationType validationType = createValidationTypeFromDataGroup(dataGroup);
+		for (DataRecordGroup dataRecordGroup : readList.listOfDataRecordGroups) {
+			ValidationType validationType = createValidationTypeFromDataGroup(dataRecordGroup);
 			listOfValidationTypes.add(validationType);
 		}
 		return listOfValidationTypes;
 	}
 
-	private ValidationType createValidationTypeFromDataGroup(DataGroup dataGroup) {
-		String validatesRecordTypeId = getLinkedRecordIdForLinkByName(dataGroup,
+	private ValidationType createValidationTypeFromDataGroup(DataRecordGroup validationTypeDG) {
+		String validatesRecordTypeId = getLinkedRecordIdForLinkByName(validationTypeDG,
 				"validatesRecordType");
-		String createDefinitionId = getLinkedRecordIdForLinkByName(dataGroup, "newMetadataId");
-		String updateDefinitionId = getLinkedRecordIdForLinkByName(dataGroup, "metadataId");
+		String createDefinitionId = getLinkedRecordIdForLinkByName(validationTypeDG,
+				"newMetadataId");
+		String updateDefinitionId = getLinkedRecordIdForLinkByName(validationTypeDG, "metadataId");
 		return new ValidationType(validatesRecordTypeId, createDefinitionId, updateDefinitionId);
 	}
 
-	private String getLinkedRecordIdForLinkByName(DataGroup dataGroup, String name) {
-		DataRecordLink firstChildOfTypeAndName = dataGroup
+	private String getLinkedRecordIdForLinkByName(DataRecordGroup validationTypeDG, String name) {
+		DataRecordLink firstChildOfTypeAndName = validationTypeDG
 				.getFirstChildOfTypeAndName(DataRecordLink.class, name);
 		return firstChildOfTypeAndName.getLinkedRecordId();
 	}
@@ -140,7 +141,7 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 	}
 
 	private Optional<ValidationType> readValidationTypeFromStorageById(String validationId) {
-		DataGroup validationTypeDG = recordStorage.read(List.of("validationType"), validationId);
+		DataRecordGroup validationTypeDG = recordStorage.read("validationType", validationId);
 		ValidationType validationType = createValidationTypeFromDataGroup(validationTypeDG);
 		return Optional.of(validationType);
 	}
