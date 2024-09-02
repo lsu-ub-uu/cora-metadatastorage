@@ -23,6 +23,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import se.uu.ub.cora.bookkeeper.metadata.CollectTerm;
+import se.uu.ub.cora.bookkeeper.metadata.CollectTermHolder;
+import se.uu.ub.cora.bookkeeper.metadata.IndexTerm;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
@@ -84,7 +87,6 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 		} catch (Exception e) {
 			throw createMetadataStorageException(e);
 		}
-
 	}
 
 	private MetadataStorageViewException createMetadataStorageException(Exception e) {
@@ -93,7 +95,7 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 	}
 
 	@Override
-	public Collection<DataGroup> getCollectTerms() {
+	public Collection<DataGroup> getCollectTermsAsDataGroup() {
 		return readMetadataElementsFromStorageForType("collectTerm");
 	}
 
@@ -145,4 +147,23 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 		ValidationType validationType = createValidationTypeFromDataGroup(validationTypeDG);
 		return Optional.of(validationType);
 	}
+
+	@Override
+	public CollectTermHolder getCollectTermHolder() {
+		StorageReadResult readList = recordStorage.readList("collectTerm", null);
+		CollectTermHolderImp collectTermHolder = new CollectTermHolderImp();
+		List<DataRecordGroup> collectTermsList = readList.listOfDataRecordGroups;
+		if (!collectTermsList.isEmpty()) {
+			DataRecordGroup firstCollecTermsAsDataGroup = collectTermsList.get(0);
+
+			CollectTerm collectTerm = IndexTerm
+					.usingIdAndNameInDataAndIndexFieldNameAndIndexType(firstCollecTermsAsDataGroup.getId(),
+							"", "", "");
+
+			collectTermHolder.addCollectTerm(collectTerm);
+		}
+		return collectTermHolder;
+
+	}
+
 }

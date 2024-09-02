@@ -20,6 +20,7 @@ package se.uu.ub.cora.metadatastorage;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
@@ -32,12 +33,14 @@ import java.util.concurrent.Callable;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import se.uu.ub.cora.bookkeeper.metadata.CollectTermHolder;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
 import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataProvider;
 import se.uu.ub.cora.data.DataRecordLink;
+import se.uu.ub.cora.data.spies.DataAttributeSpy;
 import se.uu.ub.cora.data.spies.DataFactorySpy;
 import se.uu.ub.cora.data.spies.DataGroupSpy;
 import se.uu.ub.cora.data.spies.DataRecordGroupSpy;
@@ -127,8 +130,9 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testGetCollectTerms() throws Exception {
-		callAndAssertListFromStorageByRecordType("collectTerm", metadataStorage::getCollectTerms);
+	public void testGetCollectTermsAsDataGroup() throws Exception {
+		callAndAssertListFromStorageByRecordType("collectTerm",
+				metadataStorage::getCollectTermsAsDataGroup);
 	}
 
 	@Test
@@ -137,7 +141,7 @@ public class MetadataStorageViewTest {
 		testGetMetadataElementsThrowsException(metadataStorage::getPresentationElements);
 		testGetMetadataElementsThrowsException(metadataStorage::getTexts);
 		testGetMetadataElementsThrowsException(metadataStorage::getRecordTypes);
-		testGetMetadataElementsThrowsException(metadataStorage::getCollectTerms);
+		testGetMetadataElementsThrowsException(metadataStorage::getCollectTermsAsDataGroup);
 	}
 
 	private void testGetMetadataElementsThrowsException(
@@ -260,7 +264,45 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testName() throws Exception {
+	public void testGetEmptyCollectTerms() throws Exception {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
 
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		assertTrue(collectTermHolder instanceof CollectTermHolderImp);
+	}
+
+	@Test
+	public void testGetCollectIndexTerms() throws Exception {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		// recordStorage.MRV.setSpecificReturnValuesSupplier("readList", () -> storageReadResult,
+		// "collectTerm");
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
+
+		DataRecordGroupSpy firstDataRecordGroup = new DataRecordGroupSpy();
+		storageReadResult.listOfDataRecordGroups.add(firstDataRecordGroup);
+
+		DataAttributeSpy typeAttribute = new DataAttributeSpy();
+		firstDataRecordGroup.MRV.setDefaultReturnValuesSupplier("getAttribute",
+				() -> typeAttribute);
+		typeAttribute.MRV.setDefaultReturnValuesSupplier("getValue", () -> "index");
+		firstDataRecordGroup.MRV.setDefaultReturnValuesSupplier("getId", () -> "someId");
+
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		assertNotNull(collectTermHolder.getCollectTermById("someId"));
+	}
+
+	private DataGroupSpy createStorageTerm(String collectTermId) {
+		DataGroupSpy extraData = new DataGroupSpy();
+		extraData.MRV.setSpecificReturnValuesSupplier("getFirstAtomicValueWithNameInData",
+				() -> collectTermId + "StorageKey", "storageKey");
+
+		DataGroupSpy collectTerm = new DataGroupSpy();
+		collectTerm.MRV.setSpecificReturnValuesSupplier("getFirstGroupWithNameInData",
+				() -> extraData, "extraData");
+		collectTerm.MRV.setDefaultReturnValuesSupplier("getNameInData", () -> collectTermId);
+		return collectTerm;
 	}
 }
