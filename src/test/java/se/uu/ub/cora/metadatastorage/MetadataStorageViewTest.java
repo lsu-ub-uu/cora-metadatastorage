@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, 2024 Uppsala University Library
+* Copyright 2022, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -20,7 +20,6 @@ package se.uu.ub.cora.metadatastorage;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
@@ -34,6 +33,9 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.bookkeeper.metadata.CollectTermHolder;
+import se.uu.ub.cora.bookkeeper.metadata.IndexTerm;
+import se.uu.ub.cora.bookkeeper.metadata.PermissionTerm;
+import se.uu.ub.cora.bookkeeper.metadata.StorageTerm;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
@@ -271,38 +273,138 @@ public class MetadataStorageViewTest {
 		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
 
 		assertTrue(collectTermHolder instanceof CollectTermHolderImp);
+		Filter filter = (Filter) recordStorage.MCR
+				.getValueForMethodNameAndCallNumberAndParameterName("readList", 0, "filter");
+		assertFalse(filter.filtersResults());
 	}
 
 	@Test
 	public void testGetCollectIndexTerms() throws Exception {
 		StorageReadResult storageReadResult = new StorageReadResult();
-		// recordStorage.MRV.setSpecificReturnValuesSupplier("readList", () -> storageReadResult,
-		// "collectTerm");
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
-
-		DataRecordGroupSpy firstDataRecordGroup = new DataRecordGroupSpy();
-		storageReadResult.listOfDataRecordGroups.add(firstDataRecordGroup);
-
-		DataAttributeSpy typeAttribute = new DataAttributeSpy();
-		firstDataRecordGroup.MRV.setDefaultReturnValuesSupplier("getAttribute",
-				() -> typeAttribute);
-		typeAttribute.MRV.setDefaultReturnValuesSupplier("getValue", () -> "index");
-		firstDataRecordGroup.MRV.setDefaultReturnValuesSupplier("getId", () -> "someId");
+		String suffix = "i1";
+		storageReadResult.listOfDataRecordGroups.add(createIndexTermAsRecordGroupSpy(suffix));
 
 		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
 
-		assertNotNull(collectTermHolder.getCollectTermById("someId"));
+		IndexTerm indexTerm = (IndexTerm) collectTermHolder.getCollectTermById("someId" + suffix);
+		assertEquals(indexTerm.type, "index");
+		assertEquals(indexTerm.id, "someId" + suffix);
+		assertEquals(indexTerm.nameInData, "someNameInDataValue" + suffix);
+		assertEquals(indexTerm.indexFieldName, "someIndexFieldNameValue" + suffix);
+		assertEquals(indexTerm.indexType, "someIndexTypeValue" + suffix);
 	}
 
-	private DataGroupSpy createStorageTerm(String collectTermId) {
+	@Test
+	public void testGetCollectStorageTerms() throws Exception {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
+		String suffix = "s1";
+		storageReadResult.listOfDataRecordGroups.add(createStorageTermAsRecordGroupSpy(suffix));
+
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		StorageTerm storageTerm = (StorageTerm) collectTermHolder
+				.getCollectTermById("someId" + suffix);
+		assertEquals(storageTerm.type, "storage");
+		assertEquals(storageTerm.id, "someId" + suffix);
+		assertEquals(storageTerm.nameInData, "someNameInDataValue" + suffix);
+		assertEquals(storageTerm.storageKey, "someStorageKeyValue" + suffix);
+	}
+
+	@Test
+	public void testGetCollectPermissionTerms() throws Exception {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
+		String suffix = "p1";
+		storageReadResult.listOfDataRecordGroups.add(createPermissionTermAsRecordGroupSpy(suffix));
+
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		PermissionTerm permissionTerm = (PermissionTerm) collectTermHolder
+				.getCollectTermById("someId" + suffix);
+		assertEquals(permissionTerm.type, "permission");
+		assertEquals(permissionTerm.id, "someId" + suffix);
+		assertEquals(permissionTerm.nameInData, "someNameInDataValue" + suffix);
+		assertEquals(permissionTerm.permissionKey, "somePermissionKeyValue" + suffix);
+	}
+
+	@Test
+	public void testGetCollectTerms() throws Exception {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
+		storageReadResult.listOfDataRecordGroups.add(createPermissionTermAsRecordGroupSpy("p1"));
+		storageReadResult.listOfDataRecordGroups.add(createStorageTermAsRecordGroupSpy("s1"));
+		storageReadResult.listOfDataRecordGroups.add(createIndexTermAsRecordGroupSpy("i1"));
+		storageReadResult.listOfDataRecordGroups.add(createPermissionTermAsRecordGroupSpy("p2"));
+		storageReadResult.listOfDataRecordGroups.add(createStorageTermAsRecordGroupSpy("s2"));
+		storageReadResult.listOfDataRecordGroups.add(createIndexTermAsRecordGroupSpy("i2"));
+
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		PermissionTerm permissionTerm = (PermissionTerm) collectTermHolder
+				.getCollectTermById("someId" + "p2");
+		assertEquals(permissionTerm.type, "permission");
+		StorageTerm storageTerm = (StorageTerm) collectTermHolder
+				.getCollectTermById("someId" + "s2");
+		assertEquals(storageTerm.type, "storage");
+		IndexTerm indexTerm = (IndexTerm) collectTermHolder.getCollectTermById("someId" + "i2");
+		assertEquals(indexTerm.type, "index");
+	}
+
+	private DataRecordGroupSpy createIndexTermAsRecordGroupSpy(String suffix) {
+		String type = "index";
+		Pair indexFieldName = new Pair("indexFieldName", "someIndexFieldNameValue" + suffix);
+		Pair indexType = new Pair("indexType", "someIndexTypeValue" + suffix);
+		return createCollectTermAsRecordGroup(type, suffix, indexFieldName, indexType);
+	}
+
+	record Pair(String nameInData, String value) {
+	}
+
+	private DataRecordGroupSpy createCollectTermAsRecordGroup(String type, String suffix,
+			Pair... pairs) {
+		String id = "someId" + suffix;
+		String nameInData = "someNameInDataValue" + suffix;
+		DataRecordGroupSpy recordGroup = createCollectTermAsRecord(type, id, nameInData);
+		return createExtraDataAndaddChilds(recordGroup, pairs);
+	}
+
+	private DataRecordGroupSpy createExtraDataAndaddChilds(DataRecordGroupSpy recordGroup,
+			Pair... pairs) {
 		DataGroupSpy extraData = new DataGroupSpy();
-		extraData.MRV.setSpecificReturnValuesSupplier("getFirstAtomicValueWithNameInData",
-				() -> collectTermId + "StorageKey", "storageKey");
-
-		DataGroupSpy collectTerm = new DataGroupSpy();
-		collectTerm.MRV.setSpecificReturnValuesSupplier("getFirstGroupWithNameInData",
+		recordGroup.MRV.setSpecificReturnValuesSupplier("getFirstGroupWithNameInData",
 				() -> extraData, "extraData");
-		collectTerm.MRV.setDefaultReturnValuesSupplier("getNameInData", () -> collectTermId);
-		return collectTerm;
+		for (Pair pair : pairs) {
+			extraData.MRV.setSpecificReturnValuesSupplier("getFirstAtomicValueWithNameInData",
+					() -> pair.value, pair.nameInData);
+		}
+		return recordGroup;
 	}
+
+	private DataRecordGroupSpy createCollectTermAsRecord(String type, String id,
+			String nameInData) {
+		DataRecordGroupSpy recordGroup = new DataRecordGroupSpy();
+		DataAttributeSpy typeAttribute = new DataAttributeSpy();
+		recordGroup.MRV.setDefaultReturnValuesSupplier("getAttribute", () -> typeAttribute);
+		typeAttribute.MRV.setDefaultReturnValuesSupplier("getValue", () -> type);
+
+		recordGroup.MRV.setDefaultReturnValuesSupplier("getId", () -> id);
+		recordGroup.MRV.setSpecificReturnValuesSupplier("getFirstAtomicValueWithNameInData",
+				() -> nameInData, "nameInData");
+		return recordGroup;
+	}
+
+	private DataRecordGroupSpy createStorageTermAsRecordGroupSpy(String suffix) {
+		String type = "storage";
+		Pair storageKey = new Pair("storageKey", "someStorageKeyValue" + suffix);
+		return createCollectTermAsRecordGroup(type, suffix, storageKey);
+	}
+
+	private DataRecordGroupSpy createPermissionTermAsRecordGroupSpy(String suffix) {
+		String type = "permission";
+		Pair permissionKey = new Pair("permissionKey", "somePermissionKeyValue" + suffix);
+		return createCollectTermAsRecordGroup(type, suffix, permissionKey);
+	}
+
 }

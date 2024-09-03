@@ -26,9 +26,12 @@ import java.util.Optional;
 import se.uu.ub.cora.bookkeeper.metadata.CollectTerm;
 import se.uu.ub.cora.bookkeeper.metadata.CollectTermHolder;
 import se.uu.ub.cora.bookkeeper.metadata.IndexTerm;
+import se.uu.ub.cora.bookkeeper.metadata.PermissionTerm;
+import se.uu.ub.cora.bookkeeper.metadata.StorageTerm;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
+import se.uu.ub.cora.data.DataAttribute;
 import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataRecordGroup;
 import se.uu.ub.cora.data.DataRecordLink;
@@ -150,20 +153,84 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	@Override
 	public CollectTermHolder getCollectTermHolder() {
-		StorageReadResult readList = recordStorage.readList("collectTerm", null);
+		List<DataRecordGroup> collectTermsList = readCollectTermsFromStorage();
+		if (noCollectTermsExistInStorage(collectTermsList)) {
+			return new CollectTermHolderImp();
+		}
+		return convertDataRecordGroupToCollectTerms(collectTermsList);
+	}
+
+	private List<DataRecordGroup> readCollectTermsFromStorage() {
+		StorageReadResult readList = recordStorage.readList("collectTerm", new Filter());
+		return readList.listOfDataRecordGroups;
+	}
+
+	private boolean noCollectTermsExistInStorage(List<DataRecordGroup> collectTermsList) {
+		return collectTermsList.isEmpty();
+	}
+
+	private CollectTermHolderImp convertDataRecordGroupToCollectTerms(
+			List<DataRecordGroup> collectTermsList) {
 		CollectTermHolderImp collectTermHolder = new CollectTermHolderImp();
-		List<DataRecordGroup> collectTermsList = readList.listOfDataRecordGroups;
-		if (!collectTermsList.isEmpty()) {
-			DataRecordGroup firstCollecTermsAsDataGroup = collectTermsList.get(0);
-
-			CollectTerm collectTerm = IndexTerm
-					.usingIdAndNameInDataAndIndexFieldNameAndIndexType(firstCollecTermsAsDataGroup.getId(),
-							"", "", "");
-
-			collectTermHolder.addCollectTerm(collectTerm);
+		for (DataRecordGroup collecTermsAsRecordGroup : collectTermsList) {
+			convertDataRecordGroupToCollectTerm(collectTermHolder, collecTermsAsRecordGroup);
 		}
 		return collectTermHolder;
+	}
 
+	private void convertDataRecordGroupToCollectTerm(CollectTermHolderImp collectTermHolder,
+			DataRecordGroup collecTermsAsRecordGroup) {
+		CollectTermRecord collectTermRecord = extractCommonDataAndExtraData(
+				collecTermsAsRecordGroup);
+		CollectTerm collectTerm = createCollectTerm(collectTermRecord);
+		collectTermHolder.addCollectTerm(collectTerm);
+	}
+
+	private CollectTermRecord extractCommonDataAndExtraData(
+			DataRecordGroup collecTermsAsRecordGroup) {
+		DataAttribute typeAttibute = collecTermsAsRecordGroup.getAttribute("type");
+		String typeValue = typeAttibute.getValue();
+		String id = collecTermsAsRecordGroup.getId();
+		String nameInData = collecTermsAsRecordGroup
+				.getFirstAtomicValueWithNameInData("nameInData");
+		DataGroup extraData = collecTermsAsRecordGroup.getFirstGroupWithNameInData("extraData");
+		return new CollectTermRecord(typeValue, id, nameInData, extraData);
+	}
+
+	record CollectTermRecord(String type, String id, String nameInData, DataGroup extraData) {
+	}
+
+	private CollectTerm createCollectTerm(CollectTermRecord collectTermRecord) {
+		if ("index".equals(collectTermRecord.type)) {
+			return createCollectIndexTerm(collectTermRecord);
+		}
+		if ("storage".equals(collectTermRecord.type)) {
+			return createCollectStorageTerm(collectTermRecord);
+		}
+		return createCollectPermissionTerm(collectTermRecord);
+	}
+
+	private CollectTerm createCollectIndexTerm(CollectTermRecord collectTermRecord) {
+		String indexFieldName = collectTermRecord.extraData
+				.getFirstAtomicValueWithNameInData("indexFieldName");
+		String indexType = collectTermRecord.extraData
+				.getFirstAtomicValueWithNameInData("indexType");
+		return IndexTerm.usingIdAndNameInDataAndIndexFieldNameAndIndexType(collectTermRecord.id,
+				collectTermRecord.nameInData, indexFieldName, indexType);
+	}
+
+	private CollectTerm createCollectStorageTerm(CollectTermRecord collectTermRecord) {
+		String storageKey = collectTermRecord.extraData
+				.getFirstAtomicValueWithNameInData("storageKey");
+		return StorageTerm.usingIdAndNameInDataAndStorageKey(collectTermRecord.id,
+				collectTermRecord.nameInData, storageKey);
+	}
+
+	private CollectTerm createCollectPermissionTerm(CollectTermRecord collectTermRecord) {
+		String permissionKey = collectTermRecord.extraData
+				.getFirstAtomicValueWithNameInData("permissionKey");
+		return PermissionTerm.usingIdAndNameInDataAndPermissionKey(collectTermRecord.id,
+				collectTermRecord.nameInData, permissionKey);
 	}
 
 }
