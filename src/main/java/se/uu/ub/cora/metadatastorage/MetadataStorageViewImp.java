@@ -191,8 +191,10 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 		DataAttribute typeAttibute = collecTermsAsRecordGroup.getAttribute("type");
 		String typeValue = typeAttibute.getValue();
 		String id = collecTermsAsRecordGroup.getId();
-		String nameInData = collecTermsAsRecordGroup
-				.getFirstAtomicValueWithNameInData("nameInData");
+		String nameInData = "";
+		if (collecTermsAsRecordGroup.containsChildWithNameInData("nameInData")) {
+			nameInData = collecTermsAsRecordGroup.getFirstAtomicValueWithNameInData("nameInData");
+		}
 		DataGroup extraData = collecTermsAsRecordGroup.getFirstGroupWithNameInData("extraData");
 		return new CollectTermRecord(typeValue, id, nameInData, extraData);
 	}

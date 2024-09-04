@@ -356,16 +356,19 @@ public class MetadataStorageViewTest {
 		String type = "index";
 		Pair indexFieldName = new Pair("indexFieldName", "someIndexFieldNameValue" + suffix);
 		Pair indexType = new Pair("indexType", "someIndexTypeValue" + suffix);
-		return createCollectTermAsRecordGroup(type, suffix, indexFieldName, indexType);
+		return createCollectTermAsRecordGroup(type, suffix, true, indexFieldName, indexType);
 	}
 
 	record Pair(String nameInData, String value) {
 	}
 
 	private DataRecordGroupSpy createCollectTermAsRecordGroup(String type, String suffix,
-			Pair... pairs) {
+			boolean addNameInData, Pair... pairs) {
 		String id = "someId" + suffix;
-		String nameInData = "someNameInDataValue" + suffix;
+		Optional<String> nameInData = Optional.empty();
+		if (addNameInData) {
+			nameInData = Optional.of("someNameInDataValue" + suffix);
+		}
 		DataRecordGroupSpy recordGroup = createCollectTermAsRecord(type, id, nameInData);
 		return createExtraDataAndaddChilds(recordGroup, pairs);
 	}
@@ -383,28 +386,74 @@ public class MetadataStorageViewTest {
 	}
 
 	private DataRecordGroupSpy createCollectTermAsRecord(String type, String id,
-			String nameInData) {
+			Optional<String> nameInData) {
 		DataRecordGroupSpy recordGroup = new DataRecordGroupSpy();
 		DataAttributeSpy typeAttribute = new DataAttributeSpy();
 		recordGroup.MRV.setDefaultReturnValuesSupplier("getAttribute", () -> typeAttribute);
 		typeAttribute.MRV.setDefaultReturnValuesSupplier("getValue", () -> type);
 
-		recordGroup.MRV.setDefaultReturnValuesSupplier("getId", () -> id);
-		recordGroup.MRV.setSpecificReturnValuesSupplier("getFirstAtomicValueWithNameInData",
-				() -> nameInData, "nameInData");
+		if (nameInData.isPresent()) {
+			recordGroup.MRV.setSpecificReturnValuesSupplier("containsChildWithNameInData",
+					() -> true, "nameInData");
+			recordGroup.MRV.setDefaultReturnValuesSupplier("getId", () -> id);
+			recordGroup.MRV.setSpecificReturnValuesSupplier("getFirstAtomicValueWithNameInData",
+					() -> nameInData.get(), "nameInData");
+		}
 		return recordGroup;
 	}
 
 	private DataRecordGroupSpy createStorageTermAsRecordGroupSpy(String suffix) {
 		String type = "storage";
 		Pair storageKey = new Pair("storageKey", "someStorageKeyValue" + suffix);
-		return createCollectTermAsRecordGroup(type, suffix, storageKey);
+		return createCollectTermAsRecordGroup(type, suffix, true, storageKey);
 	}
 
 	private DataRecordGroupSpy createPermissionTermAsRecordGroupSpy(String suffix) {
 		String type = "permission";
 		Pair permissionKey = new Pair("permissionKey", "somePermissionKeyValue" + suffix);
-		return createCollectTermAsRecordGroup(type, suffix, permissionKey);
+		return createCollectTermAsRecordGroup(type, suffix, true, permissionKey);
+	}
+
+	@Test
+	public void testGetCollectTermsWithOutNameInData() throws Exception {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
+		storageReadResult.listOfDataRecordGroups
+				.add(createPermissionTermWithOutNameInDataAsRecordGroup("p1"));
+		storageReadResult.listOfDataRecordGroups
+				.add(createStorageTermWithOutNameInDataAsRecordGroup("s1"));
+		storageReadResult.listOfDataRecordGroups
+				.add(createIndexTermWithOutNameInDataAsRecordGroup("i1"));
+
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		PermissionTerm permissionTerm = (PermissionTerm) collectTermHolder
+				.getCollectTermById("someId" + "p1");
+		assertEquals(permissionTerm.type, "permission");
+		StorageTerm storageTerm = (StorageTerm) collectTermHolder
+				.getCollectTermById("someId" + "s1");
+		assertEquals(storageTerm.type, "storage");
+		IndexTerm indexTerm = (IndexTerm) collectTermHolder.getCollectTermById("someId" + "i1");
+		assertEquals(indexTerm.type, "index");
+	}
+
+	private DataRecordGroupSpy createPermissionTermWithOutNameInDataAsRecordGroup(String suffix) {
+		String type = "index";
+		Pair indexFieldName = new Pair("indexFieldName", "someIndexFieldNameValue" + suffix);
+		Pair indexType = new Pair("indexType", "someIndexTypeValue" + suffix);
+		return createCollectTermAsRecordGroup(type, suffix, false, indexFieldName, indexType);
+	}
+
+	private DataRecordGroupSpy createStorageTermWithOutNameInDataAsRecordGroup(String suffix) {
+		String type = "storage";
+		Pair storageKey = new Pair("storageKey", "someStorageKeyValue" + suffix);
+		return createCollectTermAsRecordGroup(type, suffix, false, storageKey);
+	}
+
+	private DataRecordGroupSpy createIndexTermWithOutNameInDataAsRecordGroup(String suffix) {
+		String type = "permission";
+		Pair permissionKey = new Pair("permissionKey", "somePermissionKeyValue" + suffix);
+		return createCollectTermAsRecordGroup(type, suffix, false, permissionKey);
 	}
 
 }
