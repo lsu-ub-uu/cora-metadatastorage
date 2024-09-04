@@ -22,6 +22,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -391,11 +392,11 @@ public class MetadataStorageViewTest {
 		DataAttributeSpy typeAttribute = new DataAttributeSpy();
 		recordGroup.MRV.setDefaultReturnValuesSupplier("getAttribute", () -> typeAttribute);
 		typeAttribute.MRV.setDefaultReturnValuesSupplier("getValue", () -> type);
+		recordGroup.MRV.setDefaultReturnValuesSupplier("getId", () -> id);
 
 		if (nameInData.isPresent()) {
 			recordGroup.MRV.setSpecificReturnValuesSupplier("containsChildWithNameInData",
 					() -> true, "nameInData");
-			recordGroup.MRV.setDefaultReturnValuesSupplier("getId", () -> id);
 			recordGroup.MRV.setSpecificReturnValuesSupplier("getFirstAtomicValueWithNameInData",
 					() -> nameInData.get(), "nameInData");
 		}
@@ -437,7 +438,7 @@ public class MetadataStorageViewTest {
 		assertEquals(indexTerm.type, "index");
 	}
 
-	private DataRecordGroupSpy createPermissionTermWithOutNameInDataAsRecordGroup(String suffix) {
+	private DataRecordGroupSpy createIndexTermWithOutNameInDataAsRecordGroup(String suffix) {
 		String type = "index";
 		Pair indexFieldName = new Pair("indexFieldName", "someIndexFieldNameValue" + suffix);
 		Pair indexType = new Pair("indexType", "someIndexTypeValue" + suffix);
@@ -450,10 +451,15 @@ public class MetadataStorageViewTest {
 		return createCollectTermAsRecordGroup(type, suffix, false, storageKey);
 	}
 
-	private DataRecordGroupSpy createIndexTermWithOutNameInDataAsRecordGroup(String suffix) {
+	private DataRecordGroupSpy createPermissionTermWithOutNameInDataAsRecordGroup(String suffix) {
 		String type = "permission";
 		Pair permissionKey = new Pair("permissionKey", "somePermissionKeyValue" + suffix);
 		return createCollectTermAsRecordGroup(type, suffix, false, permissionKey);
+	}
+
+	@Test
+	public void testsAreFixedButDoesTheWrongThing() throws Exception {
+		fail("nameInData MUST exist for permission and index and must NOT exist for storage");
 	}
 
 }
