@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Uppsala University Library
+* Copyright 2022, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -28,19 +28,24 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import se.uu.ub.cora.bookkeeper.metadata.CollectTermHolder;
+import se.uu.ub.cora.bookkeeper.metadata.IndexTerm;
+import se.uu.ub.cora.bookkeeper.metadata.PermissionTerm;
+import se.uu.ub.cora.bookkeeper.metadata.StorageTerm;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
 import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataProvider;
 import se.uu.ub.cora.data.DataRecordLink;
+import se.uu.ub.cora.data.spies.DataAttributeSpy;
 import se.uu.ub.cora.data.spies.DataFactorySpy;
 import se.uu.ub.cora.data.spies.DataGroupSpy;
+import se.uu.ub.cora.data.spies.DataRecordGroupSpy;
 import se.uu.ub.cora.data.spies.DataRecordLinkSpy;
 import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordNotFoundException;
@@ -60,8 +65,7 @@ public class MetadataStorageViewTest {
 
 		recordStorage = new RecordStorageSpy();
 		createReadResultWithValues();
-		recordStorage.MRV.setDefaultReturnValuesSupplier("readList",
-				(Supplier<StorageReadResult>) () -> resultWithValues);
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> resultWithValues);
 
 		metadataStorage = MetadataStorageViewImp
 				.usingRecordStorageAndRecordTypeHandlerFactory(recordStorage);
@@ -128,8 +132,9 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testGetCollectTerms() throws Exception {
-		callAndAssertListFromStorageByRecordType("collectTerm", metadataStorage::getCollectTerms);
+	public void testGetCollectTermsAsDataGroup() throws Exception {
+		callAndAssertListFromStorageByRecordType("collectTerm",
+				metadataStorage::getCollectTermsAsDataGroup);
 	}
 
 	@Test
@@ -138,7 +143,7 @@ public class MetadataStorageViewTest {
 		testGetMetadataElementsThrowsException(metadataStorage::getPresentationElements);
 		testGetMetadataElementsThrowsException(metadataStorage::getTexts);
 		testGetMetadataElementsThrowsException(metadataStorage::getRecordTypes);
-		testGetMetadataElementsThrowsException(metadataStorage::getCollectTerms);
+		testGetMetadataElementsThrowsException(metadataStorage::getCollectTermsAsDataGroup);
 	}
 
 	private void testGetMetadataElementsThrowsException(
@@ -164,13 +169,15 @@ public class MetadataStorageViewTest {
 
 		Collection<ValidationType> validationTypes = metadataStorage.getValidationTypes();
 
-		recordStorage.MCR.assertParameterAsEqual("readList", 0, "types", List.of("validationType"));
+		recordStorage.MCR.assertParameter("readList", 0, "type", "validationType");
+		assertFilterSentToReadListIsCreated();
+		assertEquals(validationTypes.size(), 0);
+	}
+
+	private void assertFilterSentToReadListIsCreated() {
 		Object filter = recordStorage.MCR
 				.getValueForMethodNameAndCallNumberAndParameterName("readList", 0, "filter");
-
 		assertTrue(filter instanceof Filter);
-		assertEquals(validationTypes.size(), 0);
-
 	}
 
 	@Test
@@ -183,10 +190,10 @@ public class MetadataStorageViewTest {
 	}
 
 	private void setUpRecordStorageToReturnTwoDataGroupsForValidationType() {
-		DataGroupSpy validationTypeDG1 = createDataGroupWithDataForValidationType("1");
-		DataGroupSpy validationTypeDG2 = createDataGroupWithDataForValidationType("2");
+		DataRecordGroupSpy validationTypeDG1 = createDataGroupWithDataForValidationType("1");
+		DataRecordGroupSpy validationTypeDG2 = createDataGroupWithDataForValidationType("2");
 		StorageReadResult storageReadResult = new StorageReadResult();
-		storageReadResult.listOfDataGroups = List.of(validationTypeDG1, validationTypeDG2);
+		storageReadResult.listOfDataRecordGroups = List.of(validationTypeDG1, validationTypeDG2);
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
 	}
 
@@ -201,33 +208,34 @@ public class MetadataStorageViewTest {
 		assertTrue(validationTypes.contains(validationType2));
 	}
 
-	public DataGroupSpy createDataGroupWithDataForValidationType(String suffix) {
-		DataGroupSpy dataGroup = new DataGroupSpy();
+	public DataRecordGroupSpy createDataGroupWithDataForValidationType(String suffix) {
+		DataRecordGroupSpy dataRecordGroup = new DataRecordGroupSpy();
 
 		DataRecordLinkSpy validatesRecordType = new DataRecordLinkSpy();
 		validatesRecordType.MRV.setDefaultReturnValuesSupplier("getLinkedRecordId",
 				() -> "someRecordTypeToValidates" + suffix);
-		dataGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
+		dataRecordGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
 				() -> validatesRecordType, DataRecordLink.class, "validatesRecordType");
 
 		DataRecordLinkSpy newMetadataId = new DataRecordLinkSpy();
 		newMetadataId.MRV.setDefaultReturnValuesSupplier("getLinkedRecordId",
 				() -> "createDefinitionId" + suffix);
-		dataGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
+		dataRecordGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
 				() -> newMetadataId, DataRecordLink.class, "newMetadataId");
 
 		DataRecordLinkSpy metadataId = new DataRecordLinkSpy();
 		metadataId.MRV.setDefaultReturnValuesSupplier("getLinkedRecordId",
 				() -> "updateDefinitionId" + suffix);
-		dataGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
+		dataRecordGroup.MRV.setSpecificReturnValuesSupplier("getFirstChildOfTypeAndName",
 				() -> metadataId, DataRecordLink.class, "metadataId");
 
-		return dataGroup;
+		return dataRecordGroup;
 	}
 
 	@Test
 	public void testValidationTypeDoesNotExistInStorage() throws Exception {
-		recordStorage.MRV.setThrowException("read", RecordNotFoundException.withMessage("not found"));
+		recordStorage.MRV.setThrowException("read",
+				RecordNotFoundException.withMessage("not found"));
 
 		Optional<ValidationType> validationType = metadataStorage
 				.getValidationType("someValidationTypeId");
@@ -249,11 +257,159 @@ public class MetadataStorageViewTest {
 	}
 
 	private void setUpRecordStorageForReadForOneValidationType() {
-		DataGroupSpy validationTypeDG1 = createDataGroupWithDataForValidationType("1");
-		DataGroupSpy validationTypeDG2 = createDataGroupWithDataForValidationType("2");
+		DataRecordGroupSpy validationTypeDG1 = createDataGroupWithDataForValidationType("1");
+		DataRecordGroupSpy validationTypeDG2 = createDataGroupWithDataForValidationType("2");
 		recordStorage.MRV.setSpecificReturnValuesSupplier("read", () -> validationTypeDG1,
-				List.of("validationType"), "someValidationTypeId1");
+				"validationType", "someValidationTypeId1");
 		recordStorage.MRV.setSpecificReturnValuesSupplier("read", () -> validationTypeDG2,
-				List.of("validationType"), "someValidationTypeId2");
+				"validationType", "someValidationTypeId2");
+	}
+
+	@Test
+	public void testGetEmptyCollectTerms() throws Exception {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
+
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		assertTrue(collectTermHolder instanceof CollectTermHolderImp);
+		Filter filter = (Filter) recordStorage.MCR
+				.getValueForMethodNameAndCallNumberAndParameterName("readList", 0, "filter");
+		assertFalse(filter.filtersResults());
+	}
+
+	@Test
+	public void testGetCollectIndexTerms() throws Exception {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
+		String suffix = "i1";
+		storageReadResult.listOfDataRecordGroups.add(createIndexTermAsRecordGroupSpy(suffix));
+
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		IndexTerm indexTerm = (IndexTerm) collectTermHolder.getCollectTermById("someId" + suffix);
+		assertEquals(indexTerm.type, "index");
+		assertEquals(indexTerm.id, "someId" + suffix);
+		assertEquals(indexTerm.nameInData, "someNameInDataValue" + suffix);
+		assertEquals(indexTerm.indexFieldName, "someIndexFieldNameValue" + suffix);
+		assertEquals(indexTerm.indexType, "someIndexTypeValue" + suffix);
+	}
+
+	@Test
+	public void testGetCollectStorageTerms() throws Exception {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
+		String suffix = "s1";
+		storageReadResult.listOfDataRecordGroups.add(createStorageTermAsRecordGroupSpy(suffix));
+
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		StorageTerm storageTerm = (StorageTerm) collectTermHolder
+				.getCollectTermById("someId" + suffix);
+		assertEquals(storageTerm.type, "storage");
+		assertEquals(storageTerm.id, "someId" + suffix);
+		assertEquals(storageTerm.storageKey, "someStorageKeyValue" + suffix);
+	}
+
+	@Test
+	public void testGetCollectPermissionTerms() throws Exception {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
+		String suffix = "p1";
+		storageReadResult.listOfDataRecordGroups.add(createPermissionTermAsRecordGroupSpy(suffix));
+
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		PermissionTerm permissionTerm = (PermissionTerm) collectTermHolder
+				.getCollectTermById("someId" + suffix);
+		assertEquals(permissionTerm.type, "permission");
+		assertEquals(permissionTerm.id, "someId" + suffix);
+		assertEquals(permissionTerm.nameInData, "someNameInDataValue" + suffix);
+		assertEquals(permissionTerm.permissionKey, "somePermissionKeyValue" + suffix);
+	}
+
+	@Test
+	public void testGetCollectTerms() throws Exception {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
+		storageReadResult.listOfDataRecordGroups.add(createPermissionTermAsRecordGroupSpy("p1"));
+		storageReadResult.listOfDataRecordGroups.add(createStorageTermAsRecordGroupSpy("s1"));
+		storageReadResult.listOfDataRecordGroups.add(createIndexTermAsRecordGroupSpy("i1"));
+		storageReadResult.listOfDataRecordGroups.add(createPermissionTermAsRecordGroupSpy("p2"));
+		storageReadResult.listOfDataRecordGroups.add(createStorageTermAsRecordGroupSpy("s2"));
+		storageReadResult.listOfDataRecordGroups.add(createIndexTermAsRecordGroupSpy("i2"));
+
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		PermissionTerm permissionTerm = (PermissionTerm) collectTermHolder
+				.getCollectTermById("someId" + "p2");
+		assertEquals(permissionTerm.type, "permission");
+		StorageTerm storageTerm = (StorageTerm) collectTermHolder
+				.getCollectTermById("someId" + "s2");
+		assertEquals(storageTerm.type, "storage");
+		IndexTerm indexTerm = (IndexTerm) collectTermHolder.getCollectTermById("someId" + "i2");
+		assertEquals(indexTerm.type, "index");
+	}
+
+	private DataRecordGroupSpy createIndexTermAsRecordGroupSpy(String suffix) {
+		String type = "index";
+		Pair indexFieldName = new Pair("indexFieldName", "someIndexFieldNameValue" + suffix);
+		Pair indexType = new Pair("indexType", "someIndexTypeValue" + suffix);
+		return createCollectTermAsRecordGroup(type, suffix, true, indexFieldName, indexType);
+	}
+
+	record Pair(String nameInData, String value) {
+	}
+
+	private DataRecordGroupSpy createCollectTermAsRecordGroup(String type, String suffix,
+			boolean addNameInData, Pair... pairs) {
+		String id = "someId" + suffix;
+		Optional<String> nameInData = Optional.empty();
+		if (addNameInData) {
+			nameInData = Optional.of("someNameInDataValue" + suffix);
+		}
+		DataRecordGroupSpy recordGroup = createCollectTermAsRecord(type, id, nameInData);
+		return createExtraDataAndaddChilds(recordGroup, pairs);
+	}
+
+	private DataRecordGroupSpy createExtraDataAndaddChilds(DataRecordGroupSpy recordGroup,
+			Pair... pairs) {
+		DataGroupSpy extraData = new DataGroupSpy();
+		recordGroup.MRV.setSpecificReturnValuesSupplier("getFirstGroupWithNameInData",
+				() -> extraData, "extraData");
+		for (Pair pair : pairs) {
+			extraData.MRV.setSpecificReturnValuesSupplier("getFirstAtomicValueWithNameInData",
+					() -> pair.value, pair.nameInData);
+		}
+		return recordGroup;
+	}
+
+	private DataRecordGroupSpy createCollectTermAsRecord(String type, String id,
+			Optional<String> nameInData) {
+		DataRecordGroupSpy recordGroup = new DataRecordGroupSpy();
+		DataAttributeSpy typeAttribute = new DataAttributeSpy();
+		recordGroup.MRV.setDefaultReturnValuesSupplier("getAttribute", () -> typeAttribute);
+		typeAttribute.MRV.setDefaultReturnValuesSupplier("getValue", () -> type);
+		recordGroup.MRV.setDefaultReturnValuesSupplier("getId", () -> id);
+
+		if (nameInData.isPresent()) {
+			recordGroup.MRV.setSpecificReturnValuesSupplier("containsChildWithNameInData",
+					() -> true, "nameInData");
+			recordGroup.MRV.setSpecificReturnValuesSupplier("getFirstAtomicValueWithNameInData",
+					() -> nameInData.get(), "nameInData");
+		}
+		return recordGroup;
+	}
+
+	private DataRecordGroupSpy createStorageTermAsRecordGroupSpy(String suffix) {
+		String type = "storage";
+		Pair storageKey = new Pair("storageKey", "someStorageKeyValue" + suffix);
+		return createCollectTermAsRecordGroup(type, suffix, true, storageKey);
+	}
+
+	private DataRecordGroupSpy createPermissionTermAsRecordGroupSpy(String suffix) {
+		String type = "permission";
+		Pair permissionKey = new Pair("permissionKey", "somePermissionKeyValue" + suffix);
+		return createCollectTermAsRecordGroup(type, suffix, true, permissionKey);
 	}
 }

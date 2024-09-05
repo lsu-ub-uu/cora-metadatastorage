@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Uppsala University Library
+ * Copyright 2022, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -23,10 +23,17 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import se.uu.ub.cora.bookkeeper.metadata.CollectTerm;
+import se.uu.ub.cora.bookkeeper.metadata.CollectTermHolder;
+import se.uu.ub.cora.bookkeeper.metadata.IndexTerm;
+import se.uu.ub.cora.bookkeeper.metadata.PermissionTerm;
+import se.uu.ub.cora.bookkeeper.metadata.StorageTerm;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
+import se.uu.ub.cora.data.DataAttribute;
 import se.uu.ub.cora.data.DataGroup;
+import se.uu.ub.cora.data.DataRecordGroup;
 import se.uu.ub.cora.data.DataRecordLink;
 import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordStorage;
@@ -83,7 +90,6 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 		} catch (Exception e) {
 			throw createMetadataStorageException(e);
 		}
-
 	}
 
 	private MetadataStorageViewException createMetadataStorageException(Exception e) {
@@ -92,7 +98,7 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 	}
 
 	@Override
-	public Collection<DataGroup> getCollectTerms() {
+	public Collection<DataGroup> getCollectTermsAsDataGroup() {
 		return readMetadataElementsFromStorageForType("collectTerm");
 	}
 
@@ -102,30 +108,30 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	@Override
 	public Collection<ValidationType> getValidationTypes() {
-		StorageReadResult readList = recordStorage.readList(List.of("validationType"),
-				new Filter());
+		StorageReadResult readList = recordStorage.readList("validationType", new Filter());
 		return convertToCollectionOfValidationTypes(readList);
 	}
 
 	private List<ValidationType> convertToCollectionOfValidationTypes(StorageReadResult readList) {
 		List<ValidationType> listOfValidationTypes = new ArrayList<>();
-		for (DataGroup dataGroup : readList.listOfDataGroups) {
-			ValidationType validationType = createValidationTypeFromDataGroup(dataGroup);
+		for (DataRecordGroup dataRecordGroup : readList.listOfDataRecordGroups) {
+			ValidationType validationType = createValidationTypeFromDataGroup(dataRecordGroup);
 			listOfValidationTypes.add(validationType);
 		}
 		return listOfValidationTypes;
 	}
 
-	private ValidationType createValidationTypeFromDataGroup(DataGroup dataGroup) {
-		String validatesRecordTypeId = getLinkedRecordIdForLinkByName(dataGroup,
+	private ValidationType createValidationTypeFromDataGroup(DataRecordGroup validationTypeDG) {
+		String validatesRecordTypeId = getLinkedRecordIdForLinkByName(validationTypeDG,
 				"validatesRecordType");
-		String createDefinitionId = getLinkedRecordIdForLinkByName(dataGroup, "newMetadataId");
-		String updateDefinitionId = getLinkedRecordIdForLinkByName(dataGroup, "metadataId");
+		String createDefinitionId = getLinkedRecordIdForLinkByName(validationTypeDG,
+				"newMetadataId");
+		String updateDefinitionId = getLinkedRecordIdForLinkByName(validationTypeDG, "metadataId");
 		return new ValidationType(validatesRecordTypeId, createDefinitionId, updateDefinitionId);
 	}
 
-	private String getLinkedRecordIdForLinkByName(DataGroup dataGroup, String name) {
-		DataRecordLink firstChildOfTypeAndName = dataGroup
+	private String getLinkedRecordIdForLinkByName(DataRecordGroup validationTypeDG, String name) {
+		DataRecordLink firstChildOfTypeAndName = validationTypeDG
 				.getFirstChildOfTypeAndName(DataRecordLink.class, name);
 		return firstChildOfTypeAndName.getLinkedRecordId();
 	}
@@ -140,8 +146,79 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 	}
 
 	private Optional<ValidationType> readValidationTypeFromStorageById(String validationId) {
-		DataGroup validationTypeDG = recordStorage.read(List.of("validationType"), validationId);
+		DataRecordGroup validationTypeDG = recordStorage.read("validationType", validationId);
 		ValidationType validationType = createValidationTypeFromDataGroup(validationTypeDG);
 		return Optional.of(validationType);
+	}
+
+	@Override
+	public CollectTermHolder getCollectTermHolder() {
+		List<DataRecordGroup> collectTermsList = readCollectTermsFromStorage();
+		if (noCollectTermsExistInStorage(collectTermsList)) {
+			return new CollectTermHolderImp();
+		}
+		return convertDataRecordGroupToCollectTerms(collectTermsList);
+	}
+
+	private List<DataRecordGroup> readCollectTermsFromStorage() {
+		StorageReadResult readList = recordStorage.readList("collectTerm", new Filter());
+		return readList.listOfDataRecordGroups;
+	}
+
+	private boolean noCollectTermsExistInStorage(List<DataRecordGroup> collectTermsList) {
+		return collectTermsList.isEmpty();
+	}
+
+	private CollectTermHolderImp convertDataRecordGroupToCollectTerms(
+			List<DataRecordGroup> collectTermsList) {
+		CollectTermHolderImp collectTermHolder = new CollectTermHolderImp();
+		for (DataRecordGroup collecTermsAsRecordGroup : collectTermsList) {
+			convertDataRecordGroupToCollectTerm(collectTermHolder, collecTermsAsRecordGroup);
+		}
+		return collectTermHolder;
+	}
+
+	private void convertDataRecordGroupToCollectTerm(CollectTermHolderImp collectTermHolder,
+			DataRecordGroup collecTermsAsRecordGroup) {
+		DataAttribute typeAttibute = collecTermsAsRecordGroup.getAttribute("type");
+		String type = typeAttibute.getValue();
+		String id = collecTermsAsRecordGroup.getId();
+		CollectTerm collectTerm = createCollectTerm(type, id, collecTermsAsRecordGroup);
+		collectTermHolder.addCollectTerm(collectTerm);
+	}
+
+	private CollectTerm createCollectTerm(String type, String id,
+			DataRecordGroup collecTermsAsRecordGroup) {
+		DataGroup extraData = collecTermsAsRecordGroup.getFirstGroupWithNameInData("extraData");
+		if ("storage".equals(type)) {
+			return createStorageTerm(id, extraData);
+		}
+		if ("index".equals(type)) {
+			return createIndexTerm(id, getNameInDataFromRecordGroup(collecTermsAsRecordGroup),
+					extraData);
+		}
+		return createPermissionTerm(id, getNameInDataFromRecordGroup(collecTermsAsRecordGroup),
+				extraData);
+	}
+
+	private String getNameInDataFromRecordGroup(DataRecordGroup collecTermsAsRecordGroup) {
+		return collecTermsAsRecordGroup.getFirstAtomicValueWithNameInData("nameInData");
+	}
+
+	private CollectTerm createStorageTerm(String id, DataGroup extraData) {
+		String storageKey = extraData.getFirstAtomicValueWithNameInData("storageKey");
+		return StorageTerm.usingIdAndStorageKey(id, storageKey);
+	}
+
+	private CollectTerm createIndexTerm(String id, String nameInData, DataGroup extraData) {
+		String indexFieldName = extraData.getFirstAtomicValueWithNameInData("indexFieldName");
+		String indexType = extraData.getFirstAtomicValueWithNameInData("indexType");
+		return IndexTerm.usingIdAndNameInDataAndIndexFieldNameAndIndexType(id, nameInData,
+				indexFieldName, indexType);
+	}
+
+	private CollectTerm createPermissionTerm(String id, String nameInData, DataGroup extraData) {
+		String permissionKey = extraData.getFirstAtomicValueWithNameInData("permissionKey");
+		return PermissionTerm.usingIdAndNameInDataAndPermissionKey(id, nameInData, permissionKey);
 	}
 }
