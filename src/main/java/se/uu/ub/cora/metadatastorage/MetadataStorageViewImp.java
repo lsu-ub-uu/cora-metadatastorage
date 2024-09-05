@@ -180,59 +180,45 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	private void convertDataRecordGroupToCollectTerm(CollectTermHolderImp collectTermHolder,
 			DataRecordGroup collecTermsAsRecordGroup) {
-		CollectTermRecord collectTermRecord = extractCommonDataAndExtraData(
-				collecTermsAsRecordGroup);
-		CollectTerm collectTerm = createCollectTerm(collectTermRecord);
+		DataAttribute typeAttibute = collecTermsAsRecordGroup.getAttribute("type");
+		String type = typeAttibute.getValue();
+		String id = collecTermsAsRecordGroup.getId();
+		CollectTerm collectTerm = createCollectTerm(type, id, collecTermsAsRecordGroup);
 		collectTermHolder.addCollectTerm(collectTerm);
 	}
 
-	private CollectTermRecord extractCommonDataAndExtraData(
+	private CollectTerm createCollectTerm(String type, String id,
 			DataRecordGroup collecTermsAsRecordGroup) {
-		DataAttribute typeAttibute = collecTermsAsRecordGroup.getAttribute("type");
-		String typeValue = typeAttibute.getValue();
-		String id = collecTermsAsRecordGroup.getId();
-		String nameInData = "";
-		if (collecTermsAsRecordGroup.containsChildWithNameInData("nameInData")) {
-			nameInData = collecTermsAsRecordGroup.getFirstAtomicValueWithNameInData("nameInData");
-		}
 		DataGroup extraData = collecTermsAsRecordGroup.getFirstGroupWithNameInData("extraData");
-		return new CollectTermRecord(typeValue, id, nameInData, extraData);
-	}
-
-	record CollectTermRecord(String type, String id, String nameInData, DataGroup extraData) {
-	}
-
-	private CollectTerm createCollectTerm(CollectTermRecord collectTermRecord) {
-		if ("index".equals(collectTermRecord.type)) {
-			return createCollectIndexTerm(collectTermRecord);
+		if ("storage".equals(type)) {
+			return createStorageTerm(id, extraData);
 		}
-		if ("storage".equals(collectTermRecord.type)) {
-			return createCollectStorageTerm(collectTermRecord);
+		if ("index".equals(type)) {
+			return createIndexTerm(id, getNameInDataFromRecordGroup(collecTermsAsRecordGroup),
+					extraData);
 		}
-		return createCollectPermissionTerm(collectTermRecord);
+		return createPermissionTerm(id, getNameInDataFromRecordGroup(collecTermsAsRecordGroup),
+				extraData);
 	}
 
-	private CollectTerm createCollectIndexTerm(CollectTermRecord collectTermRecord) {
-		String indexFieldName = collectTermRecord.extraData
-				.getFirstAtomicValueWithNameInData("indexFieldName");
-		String indexType = collectTermRecord.extraData
-				.getFirstAtomicValueWithNameInData("indexType");
-		return IndexTerm.usingIdAndNameInDataAndIndexFieldNameAndIndexType(collectTermRecord.id,
-				collectTermRecord.nameInData, indexFieldName, indexType);
+	private String getNameInDataFromRecordGroup(DataRecordGroup collecTermsAsRecordGroup) {
+		return collecTermsAsRecordGroup.getFirstAtomicValueWithNameInData("nameInData");
 	}
 
-	private CollectTerm createCollectStorageTerm(CollectTermRecord collectTermRecord) {
-		String storageKey = collectTermRecord.extraData
-				.getFirstAtomicValueWithNameInData("storageKey");
-		return StorageTerm.usingIdAndNameInDataAndStorageKey(collectTermRecord.id,
-				collectTermRecord.nameInData, storageKey);
+	private CollectTerm createStorageTerm(String id, DataGroup extraData) {
+		String storageKey = extraData.getFirstAtomicValueWithNameInData("storageKey");
+		return StorageTerm.usingIdAndStorageKey(id, storageKey);
 	}
 
-	private CollectTerm createCollectPermissionTerm(CollectTermRecord collectTermRecord) {
-		String permissionKey = collectTermRecord.extraData
-				.getFirstAtomicValueWithNameInData("permissionKey");
-		return PermissionTerm.usingIdAndNameInDataAndPermissionKey(collectTermRecord.id,
-				collectTermRecord.nameInData, permissionKey);
+	private CollectTerm createIndexTerm(String id, String nameInData, DataGroup extraData) {
+		String indexFieldName = extraData.getFirstAtomicValueWithNameInData("indexFieldName");
+		String indexType = extraData.getFirstAtomicValueWithNameInData("indexType");
+		return IndexTerm.usingIdAndNameInDataAndIndexFieldNameAndIndexType(id, nameInData,
+				indexFieldName, indexType);
 	}
 
+	private CollectTerm createPermissionTerm(String id, String nameInData, DataGroup extraData) {
+		String permissionKey = extraData.getFirstAtomicValueWithNameInData("permissionKey");
+		return PermissionTerm.usingIdAndNameInDataAndPermissionKey(id, nameInData, permissionKey);
+	}
 }

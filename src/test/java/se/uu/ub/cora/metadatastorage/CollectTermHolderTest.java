@@ -38,8 +38,8 @@ public class CollectTermHolderTest {
 
 	@Test
 	public void testAddAndReadStorageTerm() {
-		StorageTerm storageTerm = StorageTerm.usingIdAndNameInDataAndStorageKey("someId",
-				"someNameInData", "someStorageKey");
+		StorageTerm storageTerm = StorageTerm.usingIdAndStorageKey("someId",
+				"someStorageKey");
 
 		holder.addCollectTerm(storageTerm);
 		CollectTerm collectTerm = holder.getCollectTermById("someId");

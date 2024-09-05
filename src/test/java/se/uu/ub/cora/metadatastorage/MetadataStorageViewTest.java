@@ -22,7 +22,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -309,7 +308,6 @@ public class MetadataStorageViewTest {
 				.getCollectTermById("someId" + suffix);
 		assertEquals(storageTerm.type, "storage");
 		assertEquals(storageTerm.id, "someId" + suffix);
-		assertEquals(storageTerm.nameInData, "someNameInDataValue" + suffix);
 		assertEquals(storageTerm.storageKey, "someStorageKeyValue" + suffix);
 	}
 
@@ -414,52 +412,4 @@ public class MetadataStorageViewTest {
 		Pair permissionKey = new Pair("permissionKey", "somePermissionKeyValue" + suffix);
 		return createCollectTermAsRecordGroup(type, suffix, true, permissionKey);
 	}
-
-	@Test
-	public void testGetCollectTermsWithOutNameInData() throws Exception {
-		StorageReadResult storageReadResult = new StorageReadResult();
-		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
-		storageReadResult.listOfDataRecordGroups
-				.add(createPermissionTermWithOutNameInDataAsRecordGroup("p1"));
-		storageReadResult.listOfDataRecordGroups
-				.add(createStorageTermWithOutNameInDataAsRecordGroup("s1"));
-		storageReadResult.listOfDataRecordGroups
-				.add(createIndexTermWithOutNameInDataAsRecordGroup("i1"));
-
-		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
-
-		PermissionTerm permissionTerm = (PermissionTerm) collectTermHolder
-				.getCollectTermById("someId" + "p1");
-		assertEquals(permissionTerm.type, "permission");
-		StorageTerm storageTerm = (StorageTerm) collectTermHolder
-				.getCollectTermById("someId" + "s1");
-		assertEquals(storageTerm.type, "storage");
-		IndexTerm indexTerm = (IndexTerm) collectTermHolder.getCollectTermById("someId" + "i1");
-		assertEquals(indexTerm.type, "index");
-	}
-
-	private DataRecordGroupSpy createIndexTermWithOutNameInDataAsRecordGroup(String suffix) {
-		String type = "index";
-		Pair indexFieldName = new Pair("indexFieldName", "someIndexFieldNameValue" + suffix);
-		Pair indexType = new Pair("indexType", "someIndexTypeValue" + suffix);
-		return createCollectTermAsRecordGroup(type, suffix, false, indexFieldName, indexType);
-	}
-
-	private DataRecordGroupSpy createStorageTermWithOutNameInDataAsRecordGroup(String suffix) {
-		String type = "storage";
-		Pair storageKey = new Pair("storageKey", "someStorageKeyValue" + suffix);
-		return createCollectTermAsRecordGroup(type, suffix, false, storageKey);
-	}
-
-	private DataRecordGroupSpy createPermissionTermWithOutNameInDataAsRecordGroup(String suffix) {
-		String type = "permission";
-		Pair permissionKey = new Pair("permissionKey", "somePermissionKeyValue" + suffix);
-		return createCollectTermAsRecordGroup(type, suffix, false, permissionKey);
-	}
-
-	@Test
-	public void testsAreFixedButDoesTheWrongThing() throws Exception {
-		fail("nameInData MUST exist for permission and index and must NOT exist for storage");
-	}
-
 }
