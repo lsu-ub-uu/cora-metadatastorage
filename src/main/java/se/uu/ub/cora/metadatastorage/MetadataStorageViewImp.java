@@ -26,13 +26,18 @@ import java.util.Optional;
 import se.uu.ub.cora.bookkeeper.metadata.CollectTerm;
 import se.uu.ub.cora.bookkeeper.metadata.CollectTermHolder;
 import se.uu.ub.cora.bookkeeper.metadata.IndexTerm;
+import se.uu.ub.cora.bookkeeper.metadata.MetadataElement;
 import se.uu.ub.cora.bookkeeper.metadata.PermissionTerm;
 import se.uu.ub.cora.bookkeeper.metadata.StorageTerm;
+import se.uu.ub.cora.bookkeeper.metadata.converter.DataGroupToMetadataConverter;
+import se.uu.ub.cora.bookkeeper.metadata.converter.DataGroupToMetadataConverterFactory;
+import se.uu.ub.cora.bookkeeper.metadata.converter.DataGroupToMetadataConverterFactoryImp;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
 import se.uu.ub.cora.data.DataAttribute;
 import se.uu.ub.cora.data.DataGroup;
+import se.uu.ub.cora.data.DataProvider;
 import se.uu.ub.cora.data.DataRecordGroup;
 import se.uu.ub.cora.data.DataRecordLink;
 import se.uu.ub.cora.storage.Filter;
@@ -71,6 +76,34 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 	private Collection<DataGroup> readListOfElementsFromStorage(List<String> listOfTypeIds) {
 		StorageReadResult readResult = recordStorage.readList(listOfTypeIds, new Filter());
 		return readResult.listOfDataGroups;
+	}
+
+	@Override
+	public MetadataElement getMetadataElement(String elementId) {
+		try {
+			DataRecordGroup dataRecordGroup = recordStorage.read("metadata", elementId);
+			DataGroup groupFromRecordGroup = DataProvider
+					.createGroupFromRecordGroup(dataRecordGroup);
+			MetadataElement metadataElement = convertDataGroupToMetadataElement(
+					groupFromRecordGroup);
+			// DataGroupToMetadataConverter converter = factory
+			// .factorForDataGroupContainingMetadata(metadataElement);
+			// MetadataElement metadata = converter.toMetadata();
+
+			return null;
+		} catch (Exception e) {
+			throw MetadataStorageViewException
+					.usingMessage("Metadata with id: " + elementId + ", not found in storage.");
+		}
+	}
+
+	DataGroupToMetadataConverterFactory factory = DataGroupToMetadataConverterFactoryImp
+			.forDataGroups();
+
+	private MetadataElement convertDataGroupToMetadataElement(DataGroup metadataElement) {
+		DataGroupToMetadataConverter converter = factory
+				.factorForDataGroupContainingMetadata(metadataElement);
+		return converter.toMetadata();
 	}
 
 	@Override
@@ -221,4 +254,5 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 		String permissionKey = extraData.getFirstAtomicValueWithNameInData("permissionKey");
 		return PermissionTerm.usingIdAndNameInDataAndPermissionKey(id, nameInData, permissionKey);
 	}
+
 }

@@ -329,7 +329,7 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testGetCollectTerms() throws Exception {
+	public void testGetCollectTerms() {
 		StorageReadResult storageReadResult = new StorageReadResult();
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
 		storageReadResult.listOfDataRecordGroups.add(createPermissionTermAsRecordGroupSpy("p1"));
@@ -349,6 +349,22 @@ public class MetadataStorageViewTest {
 		assertEquals(storageTerm.type, "storage");
 		IndexTerm indexTerm = (IndexTerm) collectTermHolder.getCollectTermById("someId" + "i2");
 		assertEquals(indexTerm.type, "index");
+	}
+
+	@Test(expectedExceptions = MetadataStorageViewException.class, expectedExceptionsMessageRegExp = ""
+			+ "Metadata with id: someId, not found in storage.")
+	public void testGetMetadataElementDoNotExists() {
+		recordStorage.MRV.setAlwaysThrowException("read",
+				RecordNotFoundException.withMessage("someException"));
+
+		metadataStorage.getMetadataElement("someId");
+	}
+
+	@Test
+	public void testGetMetadataElement() {
+		metadataStorage.getMetadataElement("someId");
+
+		recordStorage.MCR.assertParameters("read", 0, "metadata", "someId");
 	}
 
 	private DataRecordGroupSpy createIndexTermAsRecordGroupSpy(String suffix) {
