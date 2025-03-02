@@ -1,5 +1,6 @@
 /*
  * Copyright 2022, 2024 Uppsala University Library
+ * Copyright 2025 Olov McKie
  *
  * This file is part of Cora.
  *
@@ -29,15 +30,12 @@ import se.uu.ub.cora.bookkeeper.metadata.IndexTerm;
 import se.uu.ub.cora.bookkeeper.metadata.MetadataElement;
 import se.uu.ub.cora.bookkeeper.metadata.PermissionTerm;
 import se.uu.ub.cora.bookkeeper.metadata.StorageTerm;
-import se.uu.ub.cora.bookkeeper.metadata.converter.DataGroupToMetadataConverter;
-import se.uu.ub.cora.bookkeeper.metadata.converter.DataGroupToMetadataConverterFactory;
-import se.uu.ub.cora.bookkeeper.metadata.converter.DataGroupToMetadataConverterFactoryImp;
+import se.uu.ub.cora.bookkeeper.metadata.converter.DataToMetadataConverterProvider;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
 import se.uu.ub.cora.data.DataAttribute;
 import se.uu.ub.cora.data.DataGroup;
-import se.uu.ub.cora.data.DataProvider;
 import se.uu.ub.cora.data.DataRecordGroup;
 import se.uu.ub.cora.data.DataRecordLink;
 import se.uu.ub.cora.storage.Filter;
@@ -57,11 +55,11 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 	}
 
 	@Override
-	public Collection<DataGroup> getMetadataElements() {
+	public Collection<DataRecordGroup> getMetadataElements() {
 		return readMetadataElementsFromStorageForType("metadata");
 	}
 
-	private Collection<DataGroup> readMetadataElementsFromStorageForType(String recordType) {
+	private Collection<DataRecordGroup> readMetadataElementsFromStorageForType(String recordType) {
 		try {
 			return tryToReadMetadataElementsFromStorageForType(recordType);
 		} catch (Exception e) {
@@ -69,23 +67,25 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 		}
 	}
 
-	private Collection<DataGroup> tryToReadMetadataElementsFromStorageForType(String recordType) {
-		return readListOfElementsFromStorage(List.of(recordType));
+	private Collection<DataRecordGroup> tryToReadMetadataElementsFromStorageForType(
+			String recordType) {
+		return readListOfElementsFromStorage(recordType);
 	}
 
-	private Collection<DataGroup> readListOfElementsFromStorage(List<String> listOfTypeIds) {
-		StorageReadResult readResult = recordStorage.readList(listOfTypeIds, new Filter());
-		return readResult.listOfDataGroups;
+	private List<DataRecordGroup> readListOfElementsFromStorage(String recordType) {
+		StorageReadResult readResult = recordStorage.readList(recordType, new Filter());
+		return readResult.listOfDataRecordGroups;
 	}
 
 	@Override
 	public MetadataElement getMetadataElement(String elementId) {
 		try {
 			DataRecordGroup dataRecordGroup = recordStorage.read("metadata", elementId);
-			DataGroup groupFromRecordGroup = DataProvider
-					.createGroupFromRecordGroup(dataRecordGroup);
-			MetadataElement metadataElement = convertDataGroupToMetadataElement(
-					groupFromRecordGroup);
+			DataToMetadataConverterProvider.getConverter(dataRecordGroup);
+			// DataGroup groupFromRecordGroup = DataProvider
+			// .createGroupFromRecordGroup(dataRecordGroup);
+			// MetadataElement metadataElement = convertDataGroupToMetadataElement(
+			// groupFromRecordGroup);
 			// DataGroupToMetadataConverter converter = factory
 			// .factorForDataGroupContainingMetadata(metadataElement);
 			// MetadataElement metadata = converter.toMetadata();
@@ -97,29 +97,47 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 		}
 	}
 
-	DataGroupToMetadataConverterFactory factory = DataGroupToMetadataConverterFactoryImp
-			.forDataGroups();
-
-	private MetadataElement convertDataGroupToMetadataElement(DataGroup metadataElement) {
-		DataGroupToMetadataConverter converter = factory
-				.factorForDataGroupContainingMetadata(metadataElement);
-		return converter.toMetadata();
-	}
+	// DataGroupToMetadataConverterFactory factory = DataGroupToMetadataConverterFactoryImp
+	// .forDataGroups();
+	//
+	// private MetadataElement convertDataGroupToMetadataElement(DataGroup metadataElement) {
+	// DataGroupToMetadataConverter converter = factory
+	// .factorForDataGroupContainingMetadata(metadataElement);
+	// return converter.toMetadata();
+	// }
 
 	@Override
 	public Collection<DataGroup> getPresentationElements() {
-		return readMetadataElementsFromStorageForType("presentation");
+		return readMetadataElementsFromStorageForTypeGroup("presentation");
+	}
+
+	private Collection<DataGroup> readMetadataElementsFromStorageForTypeGroup(String recordType) {
+		try {
+			return tryToReadMetadataElementsFromStorageForTypeGroup(recordType);
+		} catch (Exception e) {
+			throw createMetadataStorageException(e);
+		}
+	}
+
+	private Collection<DataGroup> tryToReadMetadataElementsFromStorageForTypeGroup(
+			String recordType) {
+		return readListOfElementsFromStorageGroup(recordType);
+	}
+
+	private List<DataGroup> readListOfElementsFromStorageGroup(String recordType) {
+		StorageReadResult readResult = recordStorage.readList(List.of(recordType), new Filter());
+		return readResult.listOfDataGroups;
 	}
 
 	@Override
 	public Collection<DataGroup> getTexts() {
-		return readMetadataElementsFromStorageForType("text");
+		return readMetadataElementsFromStorageForTypeGroup("text");
 	}
 
 	@Override
 	public Collection<DataGroup> getRecordTypes() {
 		try {
-			return readListOfElementsFromStorage(List.of("recordType"));
+			return readListOfElementsFromStorageGroup("recordType");
 		} catch (Exception e) {
 			throw createMetadataStorageException(e);
 		}
@@ -132,7 +150,7 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	@Override
 	public Collection<DataGroup> getCollectTermsAsDataGroup() {
-		return readMetadataElementsFromStorageForType("collectTerm");
+		return readMetadataElementsFromStorageForTypeGroup("collectTerm");
 	}
 
 	public RecordStorage onlyForTestGetRecordStorage() {

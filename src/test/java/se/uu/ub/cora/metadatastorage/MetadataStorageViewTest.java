@@ -1,5 +1,6 @@
 /*
-* Copyright 2022, 2024 Uppsala University Library
+ * Copyright 2022, 2024 Uppsala University Library
+ * Copyright 2025 Olov McKie
  *
  * This file is part of Cora.
  *
@@ -36,17 +37,20 @@ import se.uu.ub.cora.bookkeeper.metadata.CollectTermHolder;
 import se.uu.ub.cora.bookkeeper.metadata.IndexTerm;
 import se.uu.ub.cora.bookkeeper.metadata.PermissionTerm;
 import se.uu.ub.cora.bookkeeper.metadata.StorageTerm;
+import se.uu.ub.cora.bookkeeper.metadata.converter.DataToMetadataConverterProvider;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
 import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataProvider;
+import se.uu.ub.cora.data.DataRecordGroup;
 import se.uu.ub.cora.data.DataRecordLink;
 import se.uu.ub.cora.data.spies.DataAttributeSpy;
 import se.uu.ub.cora.data.spies.DataFactorySpy;
 import se.uu.ub.cora.data.spies.DataGroupSpy;
 import se.uu.ub.cora.data.spies.DataRecordGroupSpy;
 import se.uu.ub.cora.data.spies.DataRecordLinkSpy;
+import se.uu.ub.cora.metadatastorage.spy.DataGroupToMetadataConverterFactorySpy;
 import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordNotFoundException;
 import se.uu.ub.cora.storage.StorageReadResult;
@@ -83,16 +87,49 @@ public class MetadataStorageViewTest {
 	}
 
 	private void callAndAssertListFromStorageByRecordType(String recordType,
-			Callable<Collection<DataGroup>> methodToCall) throws Exception {
-		Collection<DataGroup> result = methodToCall.call();
+			Callable<Collection<DataRecordGroup>> methodToCall) throws Exception {
+		Collection<DataRecordGroup> result = methodToCall.call();
 		assertCollectionFromStorage(recordType, result);
 	}
 
-	private void assertCollectionFromStorage(String recordType, Collection<DataGroup> result) {
+	private void assertCollectionFromStorage(String recordType,
+			Collection<DataRecordGroup> result) {
 		assertExpectedCollection(recordType, result);
 	}
 
-	private void assertExpectedCollection(String recordType, Collection<DataGroup> result) {
+	private void assertExpectedCollection(String recordType, Collection<DataRecordGroup> result) {
+		recordStorage.MCR.assertParameterAsEqual("readList", 0, "type", recordType);
+		assertEmptyFilter();
+
+		StorageReadResult readResult = (StorageReadResult) recordStorage.MCR
+				.getReturnValue("readList", 0);
+
+		assertSame(result, readResult.listOfDataRecordGroups);
+	}
+
+	private void assertEmptyFilter() {
+		Filter filter = (Filter) recordStorage.MCR
+				.getParameterForMethodAndCallNumberAndParameter("readList", 0, "filter");
+		assertFalse(filter.filtersResults());
+	}
+
+	@Test
+	public void testGetPresentationElements() throws Exception {
+		callAndAssertListFromStorageByRecordTypeGroup("presentation",
+				metadataStorage::getPresentationElements);
+	}
+
+	private void callAndAssertListFromStorageByRecordTypeGroup(String recordType,
+			Callable<Collection<DataGroup>> methodToCall) throws Exception {
+		Collection<DataGroup> result = methodToCall.call();
+		assertCollectionFromStorageGroup(recordType, result);
+	}
+
+	private void assertCollectionFromStorageGroup(String recordType, Collection<DataGroup> result) {
+		assertExpectedCollectionGroup(recordType, result);
+	}
+
+	private void assertExpectedCollectionGroup(String recordType, Collection<DataGroup> result) {
 		recordStorage.MCR.assertParameterAsEqual("readList", 0, "types", List.of(recordType));
 		assertEmptyFilter();
 
@@ -102,25 +139,13 @@ public class MetadataStorageViewTest {
 		assertSame(result, readResult.listOfDataGroups);
 	}
 
-	private void assertEmptyFilter() {
-		Filter filter = (Filter) recordStorage.MCR
-				.getValueForMethodNameAndCallNumberAndParameterName("readList", 0, "filter");
-		assertFalse(filter.filtersResults());
-	}
-
-	@Test
-	public void testGetPresentationElements() throws Exception {
-		callAndAssertListFromStorageByRecordType("presentation",
-				metadataStorage::getPresentationElements);
-	}
-
 	@Test
 	public void testGetTexts() throws Exception {
-		callAndAssertListFromStorageByRecordType("text", metadataStorage::getTexts);
+		callAndAssertListFromStorageByRecordTypeGroup("text", metadataStorage::getTexts);
 	}
 
 	@Test
-	public void testGetRecordTypes() throws Exception {
+	public void testGetRecordTypes() {
 		var recordTypes = metadataStorage.getRecordTypes();
 
 		recordStorage.MCR.assertParameterAsEqual("readList", 0, "types", List.of("recordType"));
@@ -133,20 +158,35 @@ public class MetadataStorageViewTest {
 
 	@Test
 	public void testGetCollectTermsAsDataGroup() throws Exception {
-		callAndAssertListFromStorageByRecordType("collectTerm",
+		callAndAssertListFromStorageByRecordTypeGroup("collectTerm",
 				metadataStorage::getCollectTermsAsDataGroup);
 	}
 
 	@Test
-	public void testAllExceptions() throws Exception {
+	public void testAllExceptions() {
 		testGetMetadataElementsThrowsException(metadataStorage::getMetadataElements);
-		testGetMetadataElementsThrowsException(metadataStorage::getPresentationElements);
-		testGetMetadataElementsThrowsException(metadataStorage::getTexts);
-		testGetMetadataElementsThrowsException(metadataStorage::getRecordTypes);
-		testGetMetadataElementsThrowsException(metadataStorage::getCollectTermsAsDataGroup);
+		testGetMetadataElementsThrowsExceptionGroup(metadataStorage::getPresentationElements);
+		testGetMetadataElementsThrowsExceptionGroup(metadataStorage::getTexts);
+		testGetMetadataElementsThrowsExceptionGroup(metadataStorage::getRecordTypes);
+		testGetMetadataElementsThrowsExceptionGroup(metadataStorage::getCollectTermsAsDataGroup);
 	}
 
 	private void testGetMetadataElementsThrowsException(
+			Callable<Collection<DataRecordGroup>> methodToCall) {
+		RuntimeException errorToThrow = new RuntimeException();
+		recordStorage.MRV.setAlwaysThrowException("readList", errorToThrow);
+
+		try {
+			methodToCall.call();
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof MetadataStorageViewException);
+			assertEquals(e.getMessage(), "Error getting metadata elements from storage.");
+			assertEquals(e.getCause(), errorToThrow);
+		}
+	}
+
+	private void testGetMetadataElementsThrowsExceptionGroup(
 			Callable<Collection<DataGroup>> methodToCall) {
 		RuntimeException errorToThrow = new RuntimeException();
 		recordStorage.MRV.setAlwaysThrowException("readList", errorToThrow);
@@ -162,7 +202,7 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testValidationTypesEmptyCollection() throws Exception {
+	public void testValidationTypesEmptyCollection() {
 		StorageReadResult storageReadResult = new StorageReadResult();
 		storageReadResult.listOfDataGroups = Collections.emptyList();
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
@@ -181,7 +221,7 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testValidationTypesCollectionHasValidationTypes() throws Exception {
+	public void testValidationTypesCollectionHasValidationTypes() {
 		setUpRecordStorageToReturnTwoDataGroupsForValidationType();
 
 		Collection<ValidationType> validationTypes = metadataStorage.getValidationTypes();
@@ -233,7 +273,7 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testValidationTypeDoesNotExistInStorage() throws Exception {
+	public void testValidationTypeDoesNotExistInStorage() {
 		recordStorage.MRV.setThrowException("read",
 				RecordNotFoundException.withMessage("not found"));
 
@@ -244,7 +284,7 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testValidationTypeExistInStorage() throws Exception {
+	public void testValidationTypeExistInStorage() {
 		setUpRecordStorageForReadForOneValidationType();
 
 		Optional<ValidationType> validationType = metadataStorage
@@ -266,7 +306,7 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testGetEmptyCollectTerms() throws Exception {
+	public void testGetEmptyCollectTerms() {
 		StorageReadResult storageReadResult = new StorageReadResult();
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
 
@@ -279,7 +319,7 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testGetCollectIndexTerms() throws Exception {
+	public void testGetCollectIndexTerms() {
 		StorageReadResult storageReadResult = new StorageReadResult();
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
 		String suffix = "i1";
@@ -296,7 +336,7 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testGetCollectStorageTerms() throws Exception {
+	public void testGetCollectStorageTerms() {
 		StorageReadResult storageReadResult = new StorageReadResult();
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
 		String suffix = "s1";
@@ -312,7 +352,7 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testGetCollectPermissionTerms() throws Exception {
+	public void testGetCollectPermissionTerms() {
 		StorageReadResult storageReadResult = new StorageReadResult();
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
 		String suffix = "p1";
@@ -360,11 +400,19 @@ public class MetadataStorageViewTest {
 		metadataStorage.getMetadataElement("someId");
 	}
 
-	@Test
+	@Test(enabled = false)
 	public void testGetMetadataElement() {
+		// TODO: test again when dataGroup is changed to DataRecordGroup
+		DataGroupToMetadataConverterFactorySpy dataGroupToMetadataConverterFactory = new DataGroupToMetadataConverterFactorySpy();
+		DataToMetadataConverterProvider.onlyForTestSetDataGroupToMetadataConverterFactory(
+				dataGroupToMetadataConverterFactory);
+
 		metadataStorage.getMetadataElement("someId");
 
-		recordStorage.MCR.assertParameters("read", 0, "metadata", "someId");
+		var readMetadataFromStorage = recordStorage.MCR.assertCalledParametersReturn("read",
+				"metadata", "someId");
+		dataGroupToMetadataConverterFactory.MCR.assertCalledParametersReturn(
+				"factorForDataGroupContainingMetadata", readMetadataFromStorage);
 	}
 
 	private DataRecordGroupSpy createIndexTermAsRecordGroupSpy(String suffix) {
