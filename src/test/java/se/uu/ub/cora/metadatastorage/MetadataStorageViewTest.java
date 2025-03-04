@@ -23,6 +23,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -400,7 +401,7 @@ public class MetadataStorageViewTest {
 		metadataStorage.getMetadataElement("someId");
 	}
 
-	@Test(enabled = false)
+	@Test
 	public void testGetMetadataElement() {
 		// TODO: test again when dataGroup is changed to DataRecordGroup
 		DataGroupToMetadataConverterFactorySpy dataGroupToMetadataConverterFactory = new DataGroupToMetadataConverterFactorySpy();
@@ -412,7 +413,8 @@ public class MetadataStorageViewTest {
 		var readMetadataFromStorage = recordStorage.MCR.assertCalledParametersReturn("read",
 				"metadata", "someId");
 		dataGroupToMetadataConverterFactory.MCR.assertCalledParametersReturn(
-				"factorForDataGroupContainingMetadata", readMetadataFromStorage);
+				"factorForDataContainingMetadata", readMetadataFromStorage);
+		fail();
 	}
 
 	private DataRecordGroupSpy createIndexTermAsRecordGroupSpy(String suffix) {

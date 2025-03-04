@@ -30,6 +30,7 @@ import se.uu.ub.cora.bookkeeper.metadata.IndexTerm;
 import se.uu.ub.cora.bookkeeper.metadata.MetadataElement;
 import se.uu.ub.cora.bookkeeper.metadata.PermissionTerm;
 import se.uu.ub.cora.bookkeeper.metadata.StorageTerm;
+import se.uu.ub.cora.bookkeeper.metadata.converter.DataToMetadataConverter;
 import se.uu.ub.cora.bookkeeper.metadata.converter.DataToMetadataConverterProvider;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
@@ -81,7 +82,8 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 	public MetadataElement getMetadataElement(String elementId) {
 		try {
 			DataRecordGroup dataRecordGroup = recordStorage.read("metadata", elementId);
-			DataToMetadataConverterProvider.getConverter(dataRecordGroup);
+			DataToMetadataConverter converter = DataToMetadataConverterProvider
+					.getConverter(dataRecordGroup);
 			// DataGroup groupFromRecordGroup = DataProvider
 			// .createGroupFromRecordGroup(dataRecordGroup);
 			// MetadataElement metadataElement = convertDataGroupToMetadataElement(
