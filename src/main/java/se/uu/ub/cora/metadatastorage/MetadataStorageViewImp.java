@@ -84,29 +84,12 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 			DataRecordGroup dataRecordGroup = recordStorage.read("metadata", elementId);
 			DataToMetadataConverter converter = DataToMetadataConverterProvider
 					.getConverter(dataRecordGroup);
-			// DataGroup groupFromRecordGroup = DataProvider
-			// .createGroupFromRecordGroup(dataRecordGroup);
-			// MetadataElement metadataElement = convertDataGroupToMetadataElement(
-			// groupFromRecordGroup);
-			// DataGroupToMetadataConverter converter = factory
-			// .factorForDataGroupContainingMetadata(metadataElement);
-			// MetadataElement metadata = converter.toMetadata();
-
-			return null;
+			return converter.toMetadata();
 		} catch (Exception e) {
 			throw MetadataStorageViewException
 					.usingMessage("Metadata with id: " + elementId + ", not found in storage.");
 		}
 	}
-
-	// DataGroupToMetadataConverterFactory factory = DataGroupToMetadataConverterFactoryImp
-	// .forDataGroups();
-	//
-	// private MetadataElement convertDataGroupToMetadataElement(DataGroup metadataElement) {
-	// DataGroupToMetadataConverter converter = factory
-	// .factorForDataGroupContainingMetadata(metadataElement);
-	// return converter.toMetadata();
-	// }
 
 	@Override
 	public Collection<DataGroup> getPresentationElements() {

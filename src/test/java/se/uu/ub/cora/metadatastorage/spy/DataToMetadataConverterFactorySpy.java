@@ -24,14 +24,14 @@ import se.uu.ub.cora.data.DataRecordGroup;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
-public class DataGroupToMetadataConverterFactorySpy implements DataToMetadataConverterFactory {
+public class DataToMetadataConverterFactorySpy implements DataToMetadataConverterFactory {
 	public MethodCallRecorder MCR = new MethodCallRecorder();
 	public MethodReturnValues MRV = new MethodReturnValues();
 
-	public DataGroupToMetadataConverterFactorySpy() {
+	public DataToMetadataConverterFactorySpy() {
 		MCR.useMRV(MRV);
 		MRV.setDefaultReturnValuesSupplier("factorForDataContainingMetadata",
-				DataGroupToMetadataConverterSpy::new);
+				DataToMetadataConverterSpy::new);
 	}
 
 	@Override

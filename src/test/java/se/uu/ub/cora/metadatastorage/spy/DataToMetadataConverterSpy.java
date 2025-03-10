@@ -23,11 +23,11 @@ import se.uu.ub.cora.bookkeeper.metadata.converter.DataToMetadataConverter;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
-public class DataGroupToMetadataConverterSpy implements DataToMetadataConverter {
+public class DataToMetadataConverterSpy implements DataToMetadataConverter {
 	public MethodCallRecorder MCR = new MethodCallRecorder();
 	public MethodReturnValues MRV = new MethodReturnValues();
 
-	public DataGroupToMetadataConverterSpy() {
+	public DataToMetadataConverterSpy() {
 		MCR.useMRV(MRV);
 		MRV.setDefaultReturnValuesSupplier("toMetadata", MetadataElementSpy::new);
 	}

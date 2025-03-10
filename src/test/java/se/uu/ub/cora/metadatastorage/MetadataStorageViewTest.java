@@ -23,7 +23,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +35,7 @@ import org.testng.annotations.Test;
 
 import se.uu.ub.cora.bookkeeper.metadata.CollectTermHolder;
 import se.uu.ub.cora.bookkeeper.metadata.IndexTerm;
+import se.uu.ub.cora.bookkeeper.metadata.MetadataElement;
 import se.uu.ub.cora.bookkeeper.metadata.PermissionTerm;
 import se.uu.ub.cora.bookkeeper.metadata.StorageTerm;
 import se.uu.ub.cora.bookkeeper.metadata.converter.DataToMetadataConverterProvider;
@@ -51,7 +51,8 @@ import se.uu.ub.cora.data.spies.DataFactorySpy;
 import se.uu.ub.cora.data.spies.DataGroupSpy;
 import se.uu.ub.cora.data.spies.DataRecordGroupSpy;
 import se.uu.ub.cora.data.spies.DataRecordLinkSpy;
-import se.uu.ub.cora.metadatastorage.spy.DataGroupToMetadataConverterFactorySpy;
+import se.uu.ub.cora.metadatastorage.spy.DataToMetadataConverterFactorySpy;
+import se.uu.ub.cora.metadatastorage.spy.DataToMetadataConverterSpy;
 import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordNotFoundException;
 import se.uu.ub.cora.storage.StorageReadResult;
@@ -403,18 +404,18 @@ public class MetadataStorageViewTest {
 
 	@Test
 	public void testGetMetadataElement() {
-		// TODO: test again when dataGroup is changed to DataRecordGroup
-		DataGroupToMetadataConverterFactorySpy dataGroupToMetadataConverterFactory = new DataGroupToMetadataConverterFactorySpy();
+		DataToMetadataConverterFactorySpy dataGroupToMetadataConverterFactory = new DataToMetadataConverterFactorySpy();
 		DataToMetadataConverterProvider.onlyForTestSetDataGroupToMetadataConverterFactory(
 				dataGroupToMetadataConverterFactory);
 
-		metadataStorage.getMetadataElement("someId");
+		MetadataElement metadataElement = metadataStorage.getMetadataElement("someId");
 
 		var readMetadataFromStorage = recordStorage.MCR.assertCalledParametersReturn("read",
 				"metadata", "someId");
-		dataGroupToMetadataConverterFactory.MCR.assertCalledParametersReturn(
-				"factorForDataContainingMetadata", readMetadataFromStorage);
-		fail();
+		DataToMetadataConverterSpy converter = (DataToMetadataConverterSpy) dataGroupToMetadataConverterFactory.MCR
+				.assertCalledParametersReturn("factorForDataContainingMetadata",
+						readMetadataFromStorage);
+		converter.MCR.assertReturn("toMetadata", 0, metadataElement);
 	}
 
 	private DataRecordGroupSpy createIndexTermAsRecordGroupSpy(String suffix) {
