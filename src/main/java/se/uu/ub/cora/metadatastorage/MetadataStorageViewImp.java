@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, 2024 Uppsala University Library
+ * Copyright 2022, 2024, 2025 Uppsala University Library
  * Copyright 2025 Olov McKie
  *
  * This file is part of Cora.
@@ -34,25 +34,32 @@ import se.uu.ub.cora.bookkeeper.metadata.converter.DataToMetadataConverter;
 import se.uu.ub.cora.bookkeeper.metadata.converter.DataToMetadataConverterProvider;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
+import se.uu.ub.cora.bookkeeper.text.TextElement;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
 import se.uu.ub.cora.data.DataAttribute;
 import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataRecordGroup;
 import se.uu.ub.cora.data.DataRecordLink;
+import se.uu.ub.cora.metadatastorage.converter.datatotextelement.DataToTextElementConverter;
+import se.uu.ub.cora.metadatastorage.converter.datatotextelement.DataToTextElementConverterFactory;
 import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordStorage;
 import se.uu.ub.cora.storage.StorageReadResult;
 
 public class MetadataStorageViewImp implements MetadataStorageView {
 	private RecordStorage recordStorage;
+	private DataToTextElementConverterFactory dataToTextConverterFactory;
 
-	public static MetadataStorageViewImp usingRecordStorageAndRecordTypeHandlerFactory(
-			RecordStorage recordStorage) {
-		return new MetadataStorageViewImp(recordStorage);
+	public static MetadataStorageViewImp usingRecordStorageAndTextConverterFactory(
+			RecordStorage recordStorage,
+			DataToTextElementConverterFactory dataToTextConverterFactory) {
+		return new MetadataStorageViewImp(recordStorage, dataToTextConverterFactory);
 	}
 
-	private MetadataStorageViewImp(RecordStorage recordStorage) {
+	private MetadataStorageViewImp(RecordStorage recordStorage,
+			DataToTextElementConverterFactory dataToTextConverterFactory) {
 		this.recordStorage = recordStorage;
+		this.dataToTextConverterFactory = dataToTextConverterFactory;
 	}
 
 	@Override
@@ -93,10 +100,10 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	@Override
 	public Collection<DataGroup> getPresentationElements() {
-		return readMetadataElementsFromStorageForTypeGroup("presentation");
+		return readDataGroupsFromStorageForType("presentation");
 	}
 
-	private Collection<DataGroup> readMetadataElementsFromStorageForTypeGroup(String recordType) {
+	private Collection<DataGroup> readDataGroupsFromStorageForType(String recordType) {
 		try {
 			return tryToReadMetadataElementsFromStorageForTypeGroup(recordType);
 		} catch (Exception e) {
@@ -116,7 +123,34 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	@Override
 	public Collection<DataGroup> getTexts() {
-		return readMetadataElementsFromStorageForTypeGroup("text");
+		return readDataGroupsFromStorageForType("text");
+	}
+
+	@Override
+	public Collection<TextElement> getTextElements() {
+		List<TextElement> textElements = new ArrayList<>();
+		StorageReadResult readResult = recordStorage.readList("text", new Filter());
+		List<DataRecordGroup> listOfDataRecordGroups = readResult.listOfDataRecordGroups;
+
+		for (DataRecordGroup dataRecordGroup : listOfDataRecordGroups) {
+			DataToTextElementConverter converter = dataToTextConverterFactory
+					.factor(dataRecordGroup);
+			textElements.add(converter.convert());
+		}
+		return textElements;
+	}
+
+	@Override
+	public TextElement getTextElement(String elementId) {
+		try {
+			DataRecordGroup dataRecordGroup = recordStorage.read("text", elementId);
+			DataToTextElementConverter converter = dataToTextConverterFactory
+					.factor(dataRecordGroup);
+			return converter.convert();
+		} catch (Exception e) {
+			throw MetadataStorageViewException
+					.usingMessage("Text with id: " + elementId + ", not found in storage.");
+		}
 	}
 
 	@Override
@@ -135,7 +169,7 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	@Override
 	public Collection<DataGroup> getCollectTermsAsDataGroup() {
-		return readMetadataElementsFromStorageForTypeGroup("collectTerm");
+		return readDataGroupsFromStorageForType("collectTerm");
 	}
 
 	public RecordStorage onlyForTestGetRecordStorage() {
@@ -258,4 +292,7 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 		return PermissionTerm.usingIdAndNameInDataAndPermissionKey(id, nameInData, permissionKey);
 	}
 
+	public DataToTextElementConverterFactory onlyForTestGetDataToTextElementConverterFactory() {
+		return dataToTextConverterFactory;
+	}
 }

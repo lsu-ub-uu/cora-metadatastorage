@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Uppsala University Library
+ * Copyright 2022, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -27,6 +27,7 @@ import org.testng.annotations.Test;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewInstanceProvider;
 import se.uu.ub.cora.logger.LoggerProvider;
 import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
+import se.uu.ub.cora.metadatastorage.converter.datatotextelement.DataToTextElementConverterFactoryImp;
 import se.uu.ub.cora.storage.RecordStorageProvider;
 import se.uu.ub.cora.storage.spies.RecordStorageInstanceProviderSpy;
 
@@ -45,18 +46,19 @@ public class MetadataStorageViewInstanceProviderTest {
 	}
 
 	@Test
-	public void testGetStorageView() throws Exception {
+	public void testGetStorageView() {
 		MetadataStorageViewImp metadataStorageView = (MetadataStorageViewImp) instanceProvider
 				.getStorageView();
 
 		assertTrue(metadataStorageView instanceof MetadataStorageViewImp);
 		recordStorageInstanceProvider.MCR.assertReturn("getRecordStorage", 0,
 				metadataStorageView.onlyForTestGetRecordStorage());
+		assertTrue(metadataStorageView
+				.onlyForTestGetDataToTextElementConverterFactory() instanceof DataToTextElementConverterFactoryImp);
 	}
 
 	@Test
-	public void testGetOrderToSelectImplemtationsBy() throws Exception {
+	public void testGetOrderToSelectImplemtationsBy() {
 		assertEquals(instanceProvider.getOrderToSelectImplementionsBy(), 0);
 	}
-
 }

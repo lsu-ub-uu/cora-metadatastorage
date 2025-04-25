@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Uppsala University Library
+ * Copyright 2022, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -20,6 +20,7 @@ package se.uu.ub.cora.metadatastorage;
 
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewInstanceProvider;
+import se.uu.ub.cora.metadatastorage.converter.datatotextelement.DataToTextElementConverterFactoryImp;
 import se.uu.ub.cora.storage.RecordStorage;
 import se.uu.ub.cora.storage.RecordStorageProvider;
 
@@ -33,6 +34,7 @@ public class MetadataStorageViewInstanceProviderImp implements MetadataStorageVi
 	@Override
 	public MetadataStorageView getStorageView() {
 		RecordStorage recordStorage = RecordStorageProvider.getRecordStorage();
-		return MetadataStorageViewImp.usingRecordStorageAndRecordTypeHandlerFactory(recordStorage);
+		return MetadataStorageViewImp.usingRecordStorageAndTextConverterFactory(recordStorage,
+				new DataToTextElementConverterFactoryImp());
 	}
 }

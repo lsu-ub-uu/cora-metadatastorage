@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, 2024 Uppsala University Library
+ * Copyright 2022, 2024, 2025 Uppsala University Library
  * Copyright 2025 Olov McKie
  *
  * This file is part of Cora.
@@ -41,6 +41,7 @@ import se.uu.ub.cora.bookkeeper.metadata.StorageTerm;
 import se.uu.ub.cora.bookkeeper.metadata.converter.DataToMetadataConverterProvider;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewException;
+import se.uu.ub.cora.bookkeeper.text.TextElement;
 import se.uu.ub.cora.bookkeeper.validator.ValidationType;
 import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataProvider;
@@ -63,6 +64,7 @@ public class MetadataStorageViewTest {
 	private RecordStorageSpy recordStorage;
 	private DataFactorySpy dataFactorySpy;
 	private StorageReadResult resultWithValues;
+	private DataToTextElementConverterFactorySpy dataToTextConverterFactory;
 
 	@BeforeMethod
 	public void beforeMethod() {
@@ -73,8 +75,9 @@ public class MetadataStorageViewTest {
 		createReadResultWithValues();
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> resultWithValues);
 
-		metadataStorage = MetadataStorageViewImp
-				.usingRecordStorageAndRecordTypeHandlerFactory(recordStorage);
+		dataToTextConverterFactory = new DataToTextElementConverterFactorySpy();
+		metadataStorage = MetadataStorageViewImp.usingRecordStorageAndTextConverterFactory(
+				recordStorage, dataToTextConverterFactory);
 	}
 
 	private void createReadResultWithValues() {
@@ -144,6 +147,61 @@ public class MetadataStorageViewTest {
 	@Test
 	public void testGetTexts() throws Exception {
 		callAndAssertListFromStorageByRecordTypeGroup("text", metadataStorage::getTexts);
+	}
+
+	////////////////////////////////////////////////
+	@Test(expectedExceptions = MetadataStorageViewException.class, expectedExceptionsMessageRegExp = ""
+			+ "Text with id: someElementId, not found in storage.")
+	public void testGetTextElement_DoesNotExists() {
+		recordStorage.MRV.setThrowException("read", new RuntimeException(), "text",
+				"someElementId");
+		metadataStorage.getTextElement("someElementId");
+
+	}
+
+	@Test()
+	public void testGetTextElement_Exists() {
+		TextElement textElement = metadataStorage.getTextElement("someElementId");
+
+		var textRecordGroup = recordStorage.MCR.assertCalledParametersReturn("read", "text",
+				"someElementId");
+		var converter = (DataToTextElementConverterSpy) dataToTextConverterFactory.MCR
+				.assertCalledParametersReturn("factor", textRecordGroup);
+		converter.MCR.assertReturn("convert", 0, textElement);
+	}
+
+	@Test
+	public void testGetTextElements_init() {
+		Collection<TextElement> textElements = metadataStorage.getTextElements();
+
+		assertTrue(textElements.isEmpty());
+	}
+
+	@Test
+	public void testGetTextElements_ThreeDatarecords() {
+		List<DataRecordGroup> recordsToConvert = setUpRecordStorageWithReturningThreeRecordGroups();
+
+		Collection<TextElement> textElements = metadataStorage.getTextElements();
+
+		recordStorage.MCR.assertParameter("readList", 0, "type", "text");
+		var filter = recordStorage.MCR.getParameterForMethodAndCallNumberAndParameter("readList", 0,
+				"filter");
+		assertTrue(filter instanceof Filter);
+
+		for (DataRecordGroup dataRecordGroup : recordsToConvert) {
+			var converter = (DataToTextElementConverterSpy) dataToTextConverterFactory.MCR
+					.assertCalledParametersReturn("factor", dataRecordGroup);
+			var textElement = converter.MCR.assertCalledParametersReturn("convert");
+			assertTrue(textElements.contains(textElement));
+		}
+	}
+
+	private List<DataRecordGroup> setUpRecordStorageWithReturningThreeRecordGroups() {
+		StorageReadResult resultWithValues = new StorageReadResult();
+		resultWithValues.listOfDataRecordGroups = List.of(new DataRecordGroupSpy(),
+				new DataRecordGroupSpy(), new DataRecordGroupSpy());
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> resultWithValues);
+		return resultWithValues.listOfDataRecordGroups;
 	}
 
 	@Test
@@ -418,6 +476,14 @@ public class MetadataStorageViewTest {
 		converter.MCR.assertReturn("toMetadata", 0, metadataElement);
 	}
 
+	@Test
+	public void testOnlyForTestGetDataToTextElementConverterFactory() {
+		assertSame(
+				((MetadataStorageViewImp) metadataStorage)
+						.onlyForTestGetDataToTextElementConverterFactory(),
+				dataToTextConverterFactory);
+	}
+
 	private DataRecordGroupSpy createIndexTermAsRecordGroupSpy(String suffix) {
 		String type = "index";
 		Pair indexFieldName = new Pair("indexFieldName", "someIndexFieldNameValue" + suffix);
@@ -463,7 +529,7 @@ public class MetadataStorageViewTest {
 			recordGroup.MRV.setSpecificReturnValuesSupplier("containsChildWithNameInData",
 					() -> true, "nameInData");
 			recordGroup.MRV.setSpecificReturnValuesSupplier("getFirstAtomicValueWithNameInData",
-					() -> nameInData.get(), "nameInData");
+					nameInData::get, "nameInData");
 		}
 		return recordGroup;
 	}
