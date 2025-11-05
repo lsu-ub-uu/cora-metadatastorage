@@ -412,11 +412,12 @@ public class MetadataStorageViewTest {
 	}
 
 	@Test
-	public void testGetCollectPermissionTerms() {
+	public void testGetCollectPermissionTerms_ModeStandard() {
 		StorageReadResult storageReadResult = new StorageReadResult();
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
 		String suffix = "p1";
-		storageReadResult.listOfDataRecordGroups.add(createPermissionTermAsRecordGroupSpy(suffix));
+		storageReadResult.listOfDataRecordGroups
+				.add(createPermissionTermStandardAsRecordGroupSpy(suffix));
 
 		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
 
@@ -426,16 +427,38 @@ public class MetadataStorageViewTest {
 		assertEquals(permissionTerm.id, "someId" + suffix);
 		assertEquals(permissionTerm.nameInData, "someNameInDataValue" + suffix);
 		assertEquals(permissionTerm.permissionKey, "somePermissionKeyValue" + suffix);
+		assertEquals(permissionTerm.mode, PermissionTerm.Mode.STANDARD);
+	}
+
+	@Test
+	public void testGetCollectPermissionTerms_ModeState() {
+		StorageReadResult storageReadResult = new StorageReadResult();
+		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
+		String suffix = "p1";
+		storageReadResult.listOfDataRecordGroups
+				.add(createPermissionTermStateAsRecordGroupSpy(suffix));
+
+		CollectTermHolder collectTermHolder = metadataStorage.getCollectTermHolder();
+
+		PermissionTerm permissionTerm = (PermissionTerm) collectTermHolder
+				.getCollectTermById("someId" + suffix);
+		assertEquals(permissionTerm.type, "permission");
+		assertEquals(permissionTerm.id, "someId" + suffix);
+		assertEquals(permissionTerm.nameInData, "someNameInDataValue" + suffix);
+		assertEquals(permissionTerm.permissionKey, "somePermissionKeyValue" + suffix);
+		assertEquals(permissionTerm.mode, PermissionTerm.Mode.STATE);
 	}
 
 	@Test
 	public void testGetCollectTerms() {
 		StorageReadResult storageReadResult = new StorageReadResult();
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> storageReadResult);
-		storageReadResult.listOfDataRecordGroups.add(createPermissionTermAsRecordGroupSpy("p1"));
+		storageReadResult.listOfDataRecordGroups
+				.add(createPermissionTermStandardAsRecordGroupSpy("p1"));
 		storageReadResult.listOfDataRecordGroups.add(createStorageTermAsRecordGroupSpy("s1"));
 		storageReadResult.listOfDataRecordGroups.add(createIndexTermAsRecordGroupSpy("i1"));
-		storageReadResult.listOfDataRecordGroups.add(createPermissionTermAsRecordGroupSpy("p2"));
+		storageReadResult.listOfDataRecordGroups
+				.add(createPermissionTermStandardAsRecordGroupSpy("p2"));
 		storageReadResult.listOfDataRecordGroups.add(createStorageTermAsRecordGroupSpy("s2"));
 		storageReadResult.listOfDataRecordGroups.add(createIndexTermAsRecordGroupSpy("i2"));
 
@@ -540,9 +563,17 @@ public class MetadataStorageViewTest {
 		return createCollectTermAsRecordGroup(type, suffix, true, storageKey);
 	}
 
-	private DataRecordGroupSpy createPermissionTermAsRecordGroupSpy(String suffix) {
+	private DataRecordGroupSpy createPermissionTermStandardAsRecordGroupSpy(String suffix) {
 		String type = "permission";
 		Pair permissionKey = new Pair("permissionKey", "somePermissionKeyValue" + suffix);
-		return createCollectTermAsRecordGroup(type, suffix, true, permissionKey);
+		Pair permissionMode = new Pair("mode", "standard");
+		return createCollectTermAsRecordGroup(type, suffix, true, permissionKey, permissionMode);
+	}
+
+	private DataRecordGroupSpy createPermissionTermStateAsRecordGroupSpy(String suffix) {
+		String type = "permission";
+		Pair permissionKey = new Pair("permissionKey", "somePermissionKeyValue" + suffix);
+		Pair permissionMode = new Pair("mode", "state");
+		return createCollectTermAsRecordGroup(type, suffix, true, permissionKey, permissionMode);
 	}
 }
