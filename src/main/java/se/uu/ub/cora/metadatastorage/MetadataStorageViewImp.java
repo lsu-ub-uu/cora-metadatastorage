@@ -289,7 +289,13 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	private CollectTerm createPermissionTerm(String id, String nameInData, DataGroup extraData) {
 		String permissionKey = extraData.getFirstAtomicValueWithNameInData("permissionKey");
-		return PermissionTerm.usingIdAndNameInDataAndPermissionKey(id, nameInData, permissionKey);
+		String mode = extraData.getFirstAtomicValueWithNameInData("mode");
+		if ("standard".equals(mode)) {
+			return PermissionTerm.usingIdAndNameInDataAndPermissionKeyAndMode(id, nameInData,
+					permissionKey, PermissionTerm.Mode.STANDARD);
+		}
+		return PermissionTerm.usingIdAndNameInDataAndPermissionKeyAndMode(id, nameInData,
+				permissionKey, PermissionTerm.Mode.STATE);
 	}
 
 	public DataToTextElementConverterFactory onlyForTestGetDataToTextElementConverterFactory() {

@@ -48,8 +48,8 @@ public class CollectTermHolderTest {
 
 	@Test
 	public void testAddAndReadPermissionTerm() {
-		PermissionTerm permissionTerm = PermissionTerm.usingIdAndNameInDataAndPermissionKey(
-				"someId", "someNameInData", "somePermissionKey");
+		PermissionTerm permissionTerm = PermissionTerm.usingIdAndNameInDataAndPermissionKeyAndMode(
+				"someId", "someNameInData", "somePermissionKey", PermissionTerm.Mode.STANDARD);
 
 		holder.addCollectTerm(permissionTerm);
 		assertEquals(holder.getCollectTermById("someId"), permissionTerm);
