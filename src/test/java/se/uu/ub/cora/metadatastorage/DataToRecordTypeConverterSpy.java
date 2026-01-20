@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Uppsala University Library
+ * Copyright 2026 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -18,24 +18,31 @@
  */
 package se.uu.ub.cora.metadatastorage;
 
-import se.uu.ub.cora.bookkeeper.text.TextElement;
-import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToTextElementConverter;
+import java.util.Collections;
+import java.util.Optional;
+
+import se.uu.ub.cora.bookkeeper.recordtype.RecordType;
+import se.uu.ub.cora.data.DataRecordGroup;
+import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToRecordTypeConverter;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
-public class DataToTextElementConverterSpy implements DataToTextElementConverter {
+public class DataToRecordTypeConverterSpy implements DataToRecordTypeConverter {
 
 	public MethodCallRecorder MCR = new MethodCallRecorder();
 	public MethodReturnValues MRV = new MethodReturnValues();
 
-	public DataToTextElementConverterSpy() {
+	public DataToRecordTypeConverterSpy() {
+		RecordType recordType = new RecordType("someId", "someDefinitionId", Optional.empty(),
+				"someIdSource", Optional.empty(), Collections.emptyList(), false, false, false,
+				false, false);
+
 		MCR.useMRV(MRV);
-		MRV.setDefaultReturnValuesSupplier("convert", TextElementSpy::new);
+		MRV.setDefaultReturnValuesSupplier("convert", () -> recordType);
 	}
 
 	@Override
-	public TextElement convert() {
-		return (TextElement) MCR.addCallAndReturnFromMRV();
+	public RecordType convert(DataRecordGroup dataRecordGroup) {
+		return (RecordType) MCR.addCallAndReturnFromMRV("dataRecordGroup", dataRecordGroup);
 	}
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Uppsala University Library
+ * Copyright 2026 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,12 +16,25 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.metadatastorage.converter.datatotextelement;
+package se.uu.ub.cora.metadatastorage.converter.datatometadata;
 
+import se.uu.ub.cora.bookkeeper.recordtype.RecordType;
 import se.uu.ub.cora.data.DataRecordGroup;
+import se.uu.ub.cora.metadatastorage.converter.DataConversionException;
 
-public interface DataToTextElementConverterFactory {
+public interface DataToRecordTypeConverter {
 
-	DataToTextElementConverter factor(DataRecordGroup dataRecordGroup);
+	/**
+	 * convert returns the recordtype linked to a {@link DataRecordGroup} as a record of
+	 * type{@link RecordType}
+	 * 
+	 * @param dataRecordGroup
+	 *            this is record group that we want to get the recordType information from.
+	 * @return A recordType record with information of the recordType of dataRecordGroup.
+	 * 
+	 * @throws DataConversionException
+	 *             if conversion goes wrong.
+	 */
+	RecordType convert(DataRecordGroup dataRecordGroup);
 
 }

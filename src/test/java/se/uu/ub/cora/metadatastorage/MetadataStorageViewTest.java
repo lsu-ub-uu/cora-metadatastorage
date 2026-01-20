@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, 2024, 2025 Uppsala University Library
+ * Copyright 2022, 2024, 2025, 2026 Uppsala University Library
  * Copyright 2025 Olov McKie
  *
  * This file is part of Cora.
@@ -64,7 +64,7 @@ public class MetadataStorageViewTest {
 	private RecordStorageSpy recordStorage;
 	private DataFactorySpy dataFactorySpy;
 	private StorageReadResult resultWithValues;
-	private DataToTextElementConverterFactorySpy dataToTextConverterFactory;
+	private DataToElementConverterFactorySpy dataToElementConverterFactory;
 
 	@BeforeMethod
 	public void beforeMethod() {
@@ -75,9 +75,9 @@ public class MetadataStorageViewTest {
 		createReadResultWithValues();
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> resultWithValues);
 
-		dataToTextConverterFactory = new DataToTextElementConverterFactorySpy();
+		dataToElementConverterFactory = new DataToElementConverterFactorySpy();
 		metadataStorage = MetadataStorageViewImp.usingRecordStorageAndTextConverterFactory(
-				recordStorage, dataToTextConverterFactory);
+				recordStorage, dataToElementConverterFactory);
 	}
 
 	private void createReadResultWithValues() {
@@ -165,8 +165,8 @@ public class MetadataStorageViewTest {
 
 		var textRecordGroup = recordStorage.MCR.assertCalledParametersReturn("read", "text",
 				"someElementId");
-		var converter = (DataToTextElementConverterSpy) dataToTextConverterFactory.MCR
-				.assertCalledParametersReturn("factor", textRecordGroup);
+		var converter = (DataToTextElementConverterSpy) dataToElementConverterFactory.MCR
+				.assertCalledParametersReturn("factorDataToTextElement", textRecordGroup);
 		converter.MCR.assertReturn("convert", 0, textElement);
 	}
 
@@ -189,8 +189,8 @@ public class MetadataStorageViewTest {
 		assertTrue(filter instanceof Filter);
 
 		for (DataRecordGroup dataRecordGroup : recordsToConvert) {
-			var converter = (DataToTextElementConverterSpy) dataToTextConverterFactory.MCR
-					.assertCalledParametersReturn("factor", dataRecordGroup);
+			var converter = (DataToTextElementConverterSpy) dataToElementConverterFactory.MCR
+					.assertCalledParametersReturn("factorDataToTextElement", dataRecordGroup);
 			var textElement = converter.MCR.assertCalledParametersReturn("convert");
 			assertTrue(textElements.contains(textElement));
 		}
@@ -202,6 +202,22 @@ public class MetadataStorageViewTest {
 				new DataRecordGroupSpy(), new DataRecordGroupSpy());
 		recordStorage.MRV.setDefaultReturnValuesSupplier("readList", () -> resultWithValues);
 		return resultWithValues.listOfDataRecordGroups;
+	}
+
+	@Test
+	public void testGetRecordType() {
+		String id = "someId";
+		var recordType = metadataStorage.getRecordType(id);
+
+		recordStorage.MCR.assertParameters("read", 0, "recordType", id);
+		assertFalse(true);
+
+		// recordStorage.MCR.assertParameterAsEqual("readList", 0, "types", List.of("recordType"));
+		// assertEmptyFilter();
+		// StorageReadResult readResult = (StorageReadResult) recordStorage.MCR
+		// .getReturnValue("readList", 0);
+		//
+		// assertSame(recordTypes, readResult.listOfDataGroups);
 	}
 
 	@Test
@@ -504,7 +520,7 @@ public class MetadataStorageViewTest {
 		assertSame(
 				((MetadataStorageViewImp) metadataStorage)
 						.onlyForTestGetDataToTextElementConverterFactory(),
-				dataToTextConverterFactory);
+				dataToElementConverterFactory);
 	}
 
 	private DataRecordGroupSpy createIndexTermAsRecordGroupSpy(String suffix) {

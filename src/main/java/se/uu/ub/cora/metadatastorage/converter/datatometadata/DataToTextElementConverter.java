@@ -1,5 +1,6 @@
 /*
- * Copyright 2025 Uppsala University Library
+ * Copyright 2015 Uppsala University Library
+ * Copyright 2025 Olov McKie
  *
  * This file is part of Cora.
  *
@@ -16,14 +17,21 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.metadatastorage.converter.datatotextelement;
 
-import se.uu.ub.cora.data.DataRecordGroup;
+package se.uu.ub.cora.metadatastorage.converter.datatometadata;
 
-public class DataToTextElementConverterFactoryImp implements DataToTextElementConverterFactory {
+import se.uu.ub.cora.bookkeeper.text.TextElement;
+import se.uu.ub.cora.metadatastorage.converter.DataConversionException;
 
-	@Override
-	public DataToTextElementConverter factor(DataRecordGroup dataRecordGroup) {
-		return new DataToTextElementConverterImp(dataRecordGroup);
-	}
+public interface DataToTextElementConverter {
+
+	/**
+	 * convert converts from data to a TextElement
+	 * 
+	 * @return A TextElement with the converted data
+	 * 
+	 * @throws DataConversionException
+	 *             if conversion goes wrong.
+	 */
+	TextElement convert();
 }

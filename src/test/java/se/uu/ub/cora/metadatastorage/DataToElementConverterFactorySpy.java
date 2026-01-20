@@ -19,24 +19,33 @@
 package se.uu.ub.cora.metadatastorage;
 
 import se.uu.ub.cora.data.DataRecordGroup;
-import se.uu.ub.cora.metadatastorage.converter.datatotextelement.DataToTextElementConverter;
-import se.uu.ub.cora.metadatastorage.converter.datatotextelement.DataToTextElementConverterFactory;
+import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToElementConverterFactory;
+import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToRecordTypeConverter;
+import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToTextElementConverter;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
-public class DataToTextElementConverterFactorySpy implements DataToTextElementConverterFactory {
+public class DataToElementConverterFactorySpy implements DataToElementConverterFactory {
 
 	public MethodCallRecorder MCR = new MethodCallRecorder();
 	public MethodReturnValues MRV = new MethodReturnValues();
 
-	public DataToTextElementConverterFactorySpy() {
+	public DataToElementConverterFactorySpy() {
 		MCR.useMRV(MRV);
-		MRV.setDefaultReturnValuesSupplier("factor", DataToTextElementConverterSpy::new);
+		MRV.setDefaultReturnValuesSupplier("factorDataToTextElement",
+				DataToTextElementConverterSpy::new);
+		MRV.setDefaultReturnValuesSupplier("factorDataTorRecordType",
+				DataToRecordTypeConverterSpy::new);
 	}
 
 	@Override
-	public DataToTextElementConverter factor(DataRecordGroup dataRecordGroup) {
+	public DataToTextElementConverter factorDataToTextElement(DataRecordGroup dataRecordGroup) {
 		return (DataToTextElementConverter) MCR.addCallAndReturnFromMRV("dataRecordGroup",
 				dataRecordGroup);
+	}
+
+	@Override
+	public DataToRecordTypeConverter factorDataTorRecordType() {
+		return (DataToRecordTypeConverter) MCR.addCallAndReturnFromMRV();
 	}
 }

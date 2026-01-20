@@ -20,7 +20,7 @@ package se.uu.ub.cora.metadatastorage;
 
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageView;
 import se.uu.ub.cora.bookkeeper.storage.MetadataStorageViewInstanceProvider;
-import se.uu.ub.cora.metadatastorage.converter.datatotextelement.DataToTextElementConverterFactoryImp;
+import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToElementConverterFactoryImp;
 import se.uu.ub.cora.storage.RecordStorage;
 import se.uu.ub.cora.storage.RecordStorageProvider;
 
@@ -35,6 +35,6 @@ public class MetadataStorageViewInstanceProviderImp implements MetadataStorageVi
 	public MetadataStorageView getStorageView() {
 		RecordStorage recordStorage = RecordStorageProvider.getRecordStorage();
 		return MetadataStorageViewImp.usingRecordStorageAndTextConverterFactory(recordStorage,
-				new DataToTextElementConverterFactoryImp());
+				new DataToElementConverterFactoryImp());
 	}
 }
