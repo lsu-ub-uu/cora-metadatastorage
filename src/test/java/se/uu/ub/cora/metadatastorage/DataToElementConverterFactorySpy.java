@@ -34,7 +34,7 @@ public class DataToElementConverterFactorySpy implements DataToElementConverterF
 		MCR.useMRV(MRV);
 		MRV.setDefaultReturnValuesSupplier("factorDataToTextElement",
 				DataToTextElementConverterSpy::new);
-		MRV.setDefaultReturnValuesSupplier("factorDataTorRecordType",
+		MRV.setDefaultReturnValuesSupplier("factorDataToRecordType",
 				DataToRecordTypeConverterSpy::new);
 	}
 
@@ -45,7 +45,7 @@ public class DataToElementConverterFactorySpy implements DataToElementConverterF
 	}
 
 	@Override
-	public DataToRecordTypeConverter factorDataTorRecordType() {
+	public DataToRecordTypeConverter factorDataToRecordType() {
 		return (DataToRecordTypeConverter) MCR.addCallAndReturnFromMRV();
 	}
 }

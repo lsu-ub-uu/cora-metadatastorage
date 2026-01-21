@@ -209,15 +209,14 @@ public class MetadataStorageViewTest {
 		String id = "someId";
 		var recordType = metadataStorage.getRecordType(id);
 
-		recordStorage.MCR.assertParameters("read", 0, "recordType", id);
-		assertFalse(true);
+		var recordTypeRecord = recordStorage.MCR.assertCalledParametersReturn("read", "recordType",
+				id);
 
-		// recordStorage.MCR.assertParameterAsEqual("readList", 0, "types", List.of("recordType"));
-		// assertEmptyFilter();
-		// StorageReadResult readResult = (StorageReadResult) recordStorage.MCR
-		// .getReturnValue("readList", 0);
-		//
-		// assertSame(recordTypes, readResult.listOfDataGroups);
+		var converter = (DataToRecordTypeConverterSpy) dataToElementConverterFactory.MCR
+				.assertCalledParametersReturn("factorDataToRecordType");
+
+		converter.MCR.assertCalledParameters("convert", recordTypeRecord);
+		converter.MCR.assertReturn("convert", 0, recordType);
 	}
 
 	@Test

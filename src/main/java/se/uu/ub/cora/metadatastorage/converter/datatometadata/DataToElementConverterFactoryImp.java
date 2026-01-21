@@ -28,7 +28,7 @@ public class DataToElementConverterFactoryImp implements DataToElementConverterF
 	}
 
 	@Override
-	public DataToRecordTypeConverter factorDataTorRecordType() {
+	public DataToRecordTypeConverter factorDataToRecordType() {
 		return new DataToRecordTypeConverterImp();
 	}
 }

@@ -47,7 +47,7 @@ public class DataToElementConverterFactoryTest {
 
 	@Test
 	public void testFactorDataToRecordType() {
-		DataToRecordTypeConverter converter = factory.factorDataTorRecordType();
+		DataToRecordTypeConverter converter = factory.factorDataToRecordType();
 
 		assertTrue(converter instanceof DataToRecordTypeConverterImp);
 

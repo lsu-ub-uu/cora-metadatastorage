@@ -24,6 +24,6 @@ public interface DataToElementConverterFactory {
 
 	DataToTextElementConverter factorDataToTextElement(DataRecordGroup dataRecordGroup);
 
-	DataToRecordTypeConverter factorDataTorRecordType();
+	DataToRecordTypeConverter factorDataToRecordType();
 
 }

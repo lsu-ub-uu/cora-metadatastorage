@@ -42,6 +42,7 @@ import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataRecordGroup;
 import se.uu.ub.cora.data.DataRecordLink;
 import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToElementConverterFactory;
+import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToRecordTypeConverter;
 import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToTextElementConverter;
 import se.uu.ub.cora.storage.Filter;
 import se.uu.ub.cora.storage.RecordStorage;
@@ -156,8 +157,10 @@ public class MetadataStorageViewImp implements MetadataStorageView {
 
 	@Override
 	public RecordType getRecordType(String id) {
-		recordStorage.read("recordType", id);
-		return null;
+		var dataRecordGroup = recordStorage.read("recordType", id);
+		DataToRecordTypeConverter converter = dataToElementConverterFactory
+				.factorDataToRecordType();
+		return converter.convert(dataRecordGroup);
 	}
 
 	@Override
