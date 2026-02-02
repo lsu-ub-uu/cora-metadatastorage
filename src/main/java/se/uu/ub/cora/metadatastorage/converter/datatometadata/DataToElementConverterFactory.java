@@ -16,14 +16,14 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.metadatastorage.converter.datatotextelement;
+package se.uu.ub.cora.metadatastorage.converter.datatometadata;
 
 import se.uu.ub.cora.data.DataRecordGroup;
 
-public class DataToTextElementConverterFactoryImp implements DataToTextElementConverterFactory {
+public interface DataToElementConverterFactory {
 
-	@Override
-	public DataToTextElementConverter factor(DataRecordGroup dataRecordGroup) {
-		return new DataToTextElementConverterImp(dataRecordGroup);
-	}
+	DataToTextElementConverter factorDataToTextElement(DataRecordGroup dataRecordGroup);
+
+	DataToRecordTypeConverter factorDataToRecordType();
+
 }

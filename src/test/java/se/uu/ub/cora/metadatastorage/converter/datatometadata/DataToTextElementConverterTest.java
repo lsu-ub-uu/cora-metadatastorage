@@ -17,7 +17,7 @@
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package se.uu.ub.cora.metadatastorage.converter.datatotextelement;
+package se.uu.ub.cora.metadatastorage.converter.datatometadata;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;

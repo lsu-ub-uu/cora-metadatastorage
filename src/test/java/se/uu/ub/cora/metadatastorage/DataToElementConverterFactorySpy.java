@@ -18,24 +18,34 @@
  */
 package se.uu.ub.cora.metadatastorage;
 
-import se.uu.ub.cora.bookkeeper.text.TextElement;
+import se.uu.ub.cora.data.DataRecordGroup;
+import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToElementConverterFactory;
+import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToRecordTypeConverter;
 import se.uu.ub.cora.metadatastorage.converter.datatometadata.DataToTextElementConverter;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
-public class DataToTextElementConverterSpy implements DataToTextElementConverter {
+public class DataToElementConverterFactorySpy implements DataToElementConverterFactory {
 
 	public MethodCallRecorder MCR = new MethodCallRecorder();
 	public MethodReturnValues MRV = new MethodReturnValues();
 
-	public DataToTextElementConverterSpy() {
+	public DataToElementConverterFactorySpy() {
 		MCR.useMRV(MRV);
-		MRV.setDefaultReturnValuesSupplier("convert", TextElementSpy::new);
+		MRV.setDefaultReturnValuesSupplier("factorDataToTextElement",
+				DataToTextElementConverterSpy::new);
+		MRV.setDefaultReturnValuesSupplier("factorDataToRecordType",
+				DataToRecordTypeConverterSpy::new);
 	}
 
 	@Override
-	public TextElement convert() {
-		return (TextElement) MCR.addCallAndReturnFromMRV();
+	public DataToTextElementConverter factorDataToTextElement(DataRecordGroup dataRecordGroup) {
+		return (DataToTextElementConverter) MCR.addCallAndReturnFromMRV("dataRecordGroup",
+				dataRecordGroup);
 	}
 
+	@Override
+	public DataToRecordTypeConverter factorDataToRecordType() {
+		return (DataToRecordTypeConverter) MCR.addCallAndReturnFromMRV();
+	}
 }
