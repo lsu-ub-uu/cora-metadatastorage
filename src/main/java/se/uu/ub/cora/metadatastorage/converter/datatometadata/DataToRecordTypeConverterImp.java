@@ -58,7 +58,7 @@ public class DataToRecordTypeConverterImp implements DataToRecordTypeConverter {
 		boolean useVisibility = getBoolean(dataRecordGroup, "useVisibility");
 		boolean useTrashBin = getBoolean(dataRecordGroup, "useTrashBin");
 		boolean storeInArchive = getBoolean(dataRecordGroup, "storeInArchive");
-		boolean useHostRecord = getBoolean(dataRecordGroup, "useHostRecord");
+		boolean useHostRecord = getBoolean(dataRecordGroup, "useHostRecordForPermissions");
 
 		return new RecordType(id, definitionId, searchId, idSource, sequenceId, uniqueIds, isPublic,
 				usePermissionUnit, useVisibility, useTrashBin, storeInArchive, useHostRecord);

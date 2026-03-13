@@ -301,7 +301,7 @@ public class DataToRecordTypeConverterTest {
 
 	@Test
 	public void testUseHostRecord() {
-		addAtomicToDataRecordGroup("useHostRecord", "true");
+		addAtomicToDataRecordGroup("useHostRecordForPermissions", "true");
 
 		RecordType recordType = converter.convert(dataRecordGroup);
 
