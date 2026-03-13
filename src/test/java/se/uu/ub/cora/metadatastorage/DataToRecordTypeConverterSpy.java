@@ -35,7 +35,7 @@ public class DataToRecordTypeConverterSpy implements DataToRecordTypeConverter {
 	public DataToRecordTypeConverterSpy() {
 		RecordType recordType = new RecordType("someId", "someDefinitionId", Optional.empty(),
 				"someIdSource", Optional.empty(), Collections.emptyList(), false, false, false,
-				false, false);
+				false, false, false);
 
 		MCR.useMRV(MRV);
 		MRV.setDefaultReturnValuesSupplier("convert", () -> recordType);

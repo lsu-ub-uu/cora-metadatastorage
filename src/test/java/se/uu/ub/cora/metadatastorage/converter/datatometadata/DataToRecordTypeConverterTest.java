@@ -300,10 +300,18 @@ public class DataToRecordTypeConverterTest {
 	}
 
 	@Test
+	public void testUseHostRecord() {
+		addAtomicToDataRecordGroup("useHostRecord", "true");
+
+		RecordType recordType = converter.convert(dataRecordGroup);
+
+		assertEquals(recordType.useHostRecord(), true);
+	}
+
+	@Test
 	public void testConvert_wentWrong() {
 		RuntimeException originException = new RuntimeException("someSpyError");
-		dataRecordGroup.MRV.setAlwaysThrowException("getFirstChildOfTypeAndName",
-				originException);
+		dataRecordGroup.MRV.setAlwaysThrowException("getFirstChildOfTypeAndName", originException);
 
 		try {
 			converter.convert(dataRecordGroup);
